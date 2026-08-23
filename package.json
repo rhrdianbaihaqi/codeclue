@@ -5,8 +5,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ai",
+    "llm",
+    "context",
+    "tokens",
+    "typescript"
+  ],
+  "author": "Muhammad Rahardian Baihaqi",
   "license": "MIT",
   "type": "module",
   "engines": {
