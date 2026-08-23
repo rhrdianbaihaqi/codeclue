@@ -1,6 +1,6 @@
 {
   "name": "codeclue",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Extract codebase structure for AI coding agents — understand unfamiliar code with minimal tokens",
   "scripts": {
     "test": "vitest run",
@@ -24,7 +24,7 @@
     "node": ">=18"
   },
   "bin": {
-    "clue": "./dist/cli.js"
+    "clue": "dist/cli.js"
   },
   "files": [
     "dist"
