@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+import { outline } from "./commands/outline";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
+import { CliError } from "./lib/errors";
 import { VERSION } from "./version";
 
 /**
@@ -78,6 +80,7 @@ const HELP = `codeclue ${VERSION} — ekstrak struktur codebase untuk AI coding 
   clue <command> [options]
 
 Commands
+  outline <file>       Skeleton satu file: signature, tipe, export
   version              Tampilkan versi dan nomor kontrak
 
 Options
@@ -90,7 +93,10 @@ Setiap command mendukung --json. Hasil ke stdout, progres ke stderr.
 
 interface CommandResult {
   data: unknown;
+  /** Teks bersih untuk stdout — inilah yang tersalin saat di-pipe. */
   human: string;
+  /** Ringkasan status; selalu ke stderr, tidak pernah ikut ter-pipe. */
+  note?: string;
 }
 
 type Handler = (parsed: ParsedArgv) => CommandResult;
@@ -100,6 +106,21 @@ const COMMANDS: Record<string, Handler> = {
     data: { name: "codeclue", version: VERSION, node: process.version },
     human: `codeclue ${VERSION}`,
   }),
+
+  outline: (parsed) => {
+    const file = parsed.positionals[0];
+    if (file === undefined) {
+      throw new CliError("EARGS", "Argumen <file> wajib diisi. Contoh: clue outline src/cli.ts");
+    }
+    const result = outline(file);
+    return {
+      data: result,
+      human: result.outline,
+      note:
+        `~${result.originalTokens} token -> ~${result.outlineTokens} token ` +
+        `(hemat ${result.savedPercent}%)`,
+    };
+  },
 };
 
 function emit(envelope: Envelope, human: string, asJson: boolean): void {
@@ -141,11 +162,13 @@ export function run(argv: string[]): number {
   try {
     const result = handler(parsed);
     emit(ok(command, result.data), result.human, asJson);
+    if (result.note !== undefined && !asJson) process.stderr.write(`${result.note}\n`);
     return 0;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const code = err instanceof CliError ? err.code : "INTERNAL_ERROR";
     if (asJson) {
-      emit(fail(command, "INTERNAL_ERROR", message), "", true);
+      emit(fail(command, code, message), "", true);
     } else {
       process.stderr.write(`Error: ${message}\n`);
     }
