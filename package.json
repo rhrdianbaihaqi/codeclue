@@ -1,12 +1,18 @@
 {
   "name": "codeclue",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Extract codebase structure for AI coding agents — understand unfamiliar code with minimal tokens",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "clue": "./dist/cli.js"
+  }
 }
