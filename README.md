@@ -15,7 +15,7 @@ npx codeclue@alpha outline src/context.ts
 ```
 
 ```
-~3293 token -> ~774 token (hemat 76%)
+~3293 tokens -> ~774 tokens (76% saved)
 ```
 
 ---
@@ -32,7 +32,7 @@ npx codeclue@alpha outline src/context.ts
 | `clue trace <entry>` | 🚧 not built yet |
 | `clue survey [dir]` | 🚧 not built yet |
 
-Anything marked 🚧 will print `Command tidak dikenal` and exit `1`. The API and
+Anything marked 🚧 will print `Unknown command` and exit `1`. The API and
 the JSON shape may still change before `0.1.0`.
 
 ## Install
@@ -146,7 +146,7 @@ On failure, `ok` is `false`, `data` is `null`, and `error` is filled in:
   "version": "0.1.0-alpha.0",
   "contract": 1,
   "data": null,
-  "error": { "code": "ENOENT", "message": "File tidak ditemukan: nope.ts" }
+  "error": { "code": "ENOENT", "message": "File not found: nope.ts" }
 }
 ```
 
@@ -176,7 +176,7 @@ Results go to **stdout**. Progress, warnings and the savings summary go to
 clue outline src/index.ts | pbcopy    # copies the outline only
 ```
 
-The `~3293 token -> ~774 token` line never lands in your clipboard, your pipe, or
+The `~3293 tokens -> ~774 tokens` line never lands in your clipboard, your pipe, or
 your redirected file.
 
 ## tsconfig

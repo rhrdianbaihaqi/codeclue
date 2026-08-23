@@ -75,20 +75,20 @@ export function parseArgv(argv: string[]): ParsedArgv {
   return { command, positionals: rest, flags };
 }
 
-const HELP = `codeclue ${VERSION} — ekstrak struktur codebase untuk AI coding agent
+const HELP = `codeclue ${VERSION} — extract codebase structure for AI coding agents
 
   clue <command> [options]
 
 Commands
-  outline <file>       Skeleton satu file: signature, tipe, export
-  version              Tampilkan versi dan nomor kontrak
+  outline <file>       One file's skeleton: signatures, types, exports
+  version              Print the version and contract number
 
 Options
-  --json               Keluarkan envelope JSON
-  --help, -h           Tampilkan bantuan ini
-  --version, -v        Tampilkan versi
+  --json               Emit the JSON envelope
+  --help, -h           Show this help
+  --version, -v        Print the version
 
-Setiap command mendukung --json. Hasil ke stdout, progres ke stderr.
+Every command supports --json. Results go to stdout, progress to stderr.
 `;
 
 interface CommandResult {
@@ -110,15 +110,15 @@ const COMMANDS: Record<string, Handler> = {
   outline: (parsed) => {
     const file = parsed.positionals[0];
     if (file === undefined) {
-      throw new CliError("EARGS", "Argumen <file> wajib diisi. Contoh: clue outline src/cli.ts");
+      throw new CliError("EARGS", "Missing required argument <file>. Example: clue outline src/cli.ts");
     }
     const result = outline(file);
     return {
       data: result,
       human: result.outline,
       note:
-        `~${result.originalTokens} token -> ~${result.outlineTokens} token ` +
-        `(hemat ${result.savedPercent}%)`,
+        `~${result.originalTokens} tokens -> ~${result.outlineTokens} tokens ` +
+        `(${result.savedPercent}% saved)`,
     };
   },
 };
@@ -141,7 +141,7 @@ export function run(argv: string[]): number {
 
   if (command === null) {
     if (asJson) {
-      emit(fail("", "NO_COMMAND", "Tidak ada command. Coba: clue --help"), "", true);
+      emit(fail("", "NO_COMMAND", "No command given. Try: clue --help"), "", true);
       return 1;
     }
     process.stdout.write(HELP);
@@ -150,7 +150,7 @@ export function run(argv: string[]): number {
 
   const handler = COMMANDS[command];
   if (handler === undefined) {
-    const message = `Command tidak dikenal: ${command}. Yang tersedia: ${Object.keys(COMMANDS).join(", ")}`;
+    const message = `Unknown command: ${command}. Available: ${Object.keys(COMMANDS).join(", ")}`;
     if (asJson) {
       emit(fail(command, "UNKNOWN_COMMAND", message), "", true);
     } else {

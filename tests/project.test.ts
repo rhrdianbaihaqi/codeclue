@@ -35,7 +35,7 @@ describe("fallback tanpa tsconfig", () => {
     expect(result.outline).toContain("export function hi(name: string): string");
     expect(result.outline).not.toContain("hai ${name}");
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatch(/tsconfig\.json tidak ditemukan/);
+    expect(warnings[0]).toMatch(/no tsconfig\.json found/);
   });
 
   it("tidak memberi peringatan saat tsconfig ada", () => {

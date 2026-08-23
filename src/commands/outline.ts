@@ -117,15 +117,15 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
   try {
     stat = statSync(filePath);
   } catch {
-    throw new CliError("ENOENT", `File tidak ditemukan: ${filePath}`);
+    throw new CliError("ENOENT", `File not found: ${filePath}`);
   }
   if (stat.isDirectory()) {
-    throw new CliError("EISDIR", `${filePath} adalah direktori, bukan file`);
+    throw new CliError("EISDIR", `${filePath} is a directory, not a file`);
   }
 
   const tsConfigFilePath = findTsConfig(filePath);
   if (tsConfigFilePath === undefined) {
-    warn(`Peringatan: tsconfig.json tidak ditemukan dari ${filePath}; memakai setelan bawaan.`);
+    warn(`Warning: no tsconfig.json found from ${filePath}; falling back to defaults.`);
   }
 
   // Hanya file target yang ditambahkan. Tidak pernah ada .save() di sini —

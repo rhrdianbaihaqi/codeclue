@@ -151,12 +151,12 @@ describe("hitungan token", () => {
 
 describe("error", () => {
   it("file tidak ada -> ENOENT", () => {
-    expect(() => outline("tidak/ada/file.ts")).toThrowError(/File tidak ditemukan/);
+    expect(() => outline("tidak/ada/file.ts")).toThrowError(/File not found/);
   });
 
   it("direktori -> EISDIR", () => {
     expect(() => outline(fileURLToPath(new URL("./fixtures", import.meta.url)))).toThrowError(
-      /adalah direktori/,
+      /is a directory/,
     );
   });
 });
