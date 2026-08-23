@@ -63,6 +63,27 @@ export class Repo<T extends { id: string }> {
   }
 }
 
+export const handlers = {
+  async onSave(item: User): Promise<void> {
+    const key = item.id.trim();
+    console.log(key);
+  },
+
+  onLoad: function loadUser(id: string): User | null {
+    const cached = id.length > 0;
+    return cached ? null : null;
+  },
+
+  onError: (err: Error): void => {
+    console.error(err.message);
+  },
+};
+
+export const compute = function inner(a: number, b: number): number {
+  const sum = a + b;
+  return sum * 2;
+};
+
 export default class Client {
   request(path: string): Promise<Response> {
     return fetch(path);

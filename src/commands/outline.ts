@@ -13,9 +13,14 @@ import type {
 } from "ts-morph";
 import { estimateTokens, savedPercent } from "../lib/count";
 import { CliError } from "../lib/errors";
-import { createProject } from "../lib/project";
+import { createProject, findTsConfig } from "../lib/project";
 
 const BODY_PLACEHOLDER = "{ /* ... */ }";
+
+export interface OutlineOptions {
+  /** Ke mana peringatan non-fatal dikirim. Default: stderr. */
+  warn?: (message: string) => void;
+}
 
 export interface OutlineResult {
   file: string;
@@ -105,7 +110,9 @@ function collectEdits(sf: SourceFile): Edit[] {
   return edits;
 }
 
-export function outline(filePath: string): OutlineResult {
+export function outline(filePath: string, options: OutlineOptions = {}): OutlineResult {
+  const warn = options.warn ?? ((message: string) => process.stderr.write(`${message}\n`));
+
   let stat;
   try {
     stat = statSync(filePath);
@@ -116,7 +123,14 @@ export function outline(filePath: string): OutlineResult {
     throw new CliError("EISDIR", `${filePath} adalah direktori, bukan file`);
   }
 
-  const project = createProject();
+  const tsConfigFilePath = findTsConfig(filePath);
+  if (tsConfigFilePath === undefined) {
+    warn(`Peringatan: tsconfig.json tidak ditemukan dari ${filePath}; memakai setelan bawaan.`);
+  }
+
+  // Hanya file target yang ditambahkan. Tidak pernah ada .save() di sini —
+  // seluruh manipulasi berhenti di memori, file di disk tidak disentuh.
+  const project = createProject(tsConfigFilePath);
   const sf = project.addSourceFileAtPath(filePath);
   const original = sf.getFullText();
 

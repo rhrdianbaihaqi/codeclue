@@ -41,6 +41,16 @@ describe("signature bertahan utuh", () => {
     expect(text).toContain("request(path: string): Promise<Response>");
   });
 
+  it("method di object literal", () => {
+    expect(text).toContain("async onSave(item: User): Promise<void>");
+    expect(text).toContain("onLoad: function loadUser(id: string): User | null");
+    expect(text).toContain("onError: (err: Error): void =>");
+  });
+
+  it("function expression yang di-assign ke variabel", () => {
+    expect(text).toContain("export const compute = function inner(a: number, b: number): number");
+  });
+
   it("arrow function", () => {
     expect(text).toContain("export const toSlug = (text: string): string");
     expect(text).toContain("export const double = (n: number): number => n * 2;");
@@ -74,6 +84,10 @@ describe("body hilang", () => {
     ["return this.items.size", "isi getter"],
     ["out[key] = obj[key]", "isi fungsi generic"],
     ["return fetch(path)", "isi method default export"],
+    ["item.id.trim()", "isi method object literal"],
+    ["const cached = id.length", "isi function expression di object literal"],
+    ["console.error(err.message)", "isi arrow di object literal"],
+    ["return sum * 2", "isi function expression bernama"],
   ])("%s tidak ada lagi (%s)", (needle) => {
     expect(text).not.toContain(needle);
   });
