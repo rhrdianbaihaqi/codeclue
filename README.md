@@ -1,88 +1,219 @@
 # codeclue
 
-Extract the structure of a TypeScript codebase so an AI coding agent can
-understand unfamiliar code with minimal tokens.
+[![npm](https://img.shields.io/npm/v/codeclue/alpha?label=npm%40alpha&color=cb3837)](https://www.npmjs.com/package/codeclue)
+[![status](https://img.shields.io/badge/status-alpha-orange)](#status)
+[![node](https://img.shields.io/badge/node-%E2%89%A518-5fa04e)](#requirements)
+[![license](https://img.shields.io/npm/l/codeclue?color=blue)](LICENSE)
+[![deps](https://img.shields.io/badge/runtime%20deps-1-informational)](#why-it-is-small)
 
-> **Status: early development.** Only `clue version` works today. The
-> commands below are the planned MVP and are not implemented yet — do not
-> depend on this package in a real workflow.
+**Read a TypeScript file's shape without reading the file.** `codeclue` strips
+function bodies and prints what is left — signatures, types, exports — so an AI
+coding agent can understand unfamiliar code for a fraction of the tokens.
 
-## The problem
+```bash
+npx codeclue@alpha outline src/context.ts
+```
 
-When an AI coding agent works in a codebase it does not know, it reads
-dozens of whole files to answer a single question. Most of that content is
-irrelevant: the agent needs to know *what functions exist and what their
-parameters look like*, not how they are implemented.
+```
+~3293 token -> ~774 token (hemat 76%)
+```
 
-Answering "how does checkout work?" on a real repository:
+---
 
-| Without codeclue | With codeclue |
+## Status
+
+**Alpha.** One command works today:
+
+| Command | Status |
 | --- | --- |
-| 13 whole files, ~38,000 tokens | trace map ~900 tokens |
-| still unsure, 4 more files | 1 full file ~2,100 tokens |
-| | 5 skeletons ~1,200 tokens |
-| **≈ 38,000** | **≈ 4,200** |
+| `clue outline <file>` | ✅ working |
+| `clue version` | ✅ working |
+| `clue graph <file>` | 🚧 not built yet |
+| `clue trace <entry>` | 🚧 not built yet |
+| `clue survey [dir]` | 🚧 not built yet |
 
-Target saving: 70–90% when exploring an unfamiliar codebase.
-
-## Design principle
-
-> The CLI does what is deterministic. The LLM does what needs reasoning.
-
-Parsing an AST, walking the import graph and counting tokens always give
-the same answer, so they belong in the CLI, not in a model's context
-window. Every mechanical step moved into the CLI is a token not burned.
+Anything marked 🚧 will print `Command tidak dikenal` and exit `1`. The API and
+the JSON shape may still change before `0.1.0`.
 
 ## Install
 
-```bash
-npm install -g codeclue
-```
-
-Requires Node.js 18 or newer. The binary is named `clue`.
-
-## Usage
+Run it without installing:
 
 ```bash
-clue version          # works today
-clue version --json
-clue --help
+npx codeclue@alpha outline src/index.ts
 ```
 
-### Planned commands
+Or install the binary globally — note the package is `codeclue`, the command is
+`clue`:
 
-| Command | What it will do |
-| --- | --- |
-| `clue outline <file>` | One file's skeleton: signatures, types, exports — no function bodies |
-| `clue graph <file> --depth N` | Walk the import graph; never descends into `node_modules` |
-| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists |
-| `clue survey [dir]` | Token profile of a repo: the 20 heaviest files and a suggested ignore list |
+```bash
+npm install -g codeclue@alpha
+```
+
+<a id="requirements"></a>Requires **Node.js 18 or newer**. The `@alpha` tag
+matters: without it you may get a different release once `0.1.0` ships.
+
+## What `outline` does
+
+Given this file:
+
+```ts
+/**
+ * Fetch a user from the API.
+ * This second line is dropped.
+ */
+export async function fetchUser(id: string): Promise<User> {
+  const res = await fetch(`/users/${id}`);
+  return (await res.json()) as User;
+}
+
+export class Repo<T extends { id: string }> {
+  private readonly items = new Map<string, T>();
+  constructor(private readonly label: string) {
+    this.items.clear();
+  }
+  get size(): number {
+    return this.items.size;
+  }
+}
+```
+
+`clue outline` prints:
+
+```ts
+/** Fetch a user from the API. */
+export async function fetchUser(id: string): Promise<User> { /* ... */ }
+
+export class Repo<T extends { id: string }> {
+  private readonly items = new Map<string, T>();
+  constructor(private readonly label: string) { /* ... */ }
+  get size(): number { /* ... */ }
+}
+```
+
+**Kept:** `export`, interfaces, type aliases, function and method signatures,
+generics, overload signatures, class fields, the first sentence of each JSDoc.
+
+**Dropped:** function bodies and the comments inside them.
+
+Bodies are emptied for function declarations, methods, constructors, getters and
+setters, function expressions, arrow functions, and methods inside object
+literals. An arrow with an expression body (`(n) => n * 2`) is left alone — it is
+already as short as its signature.
+
+Signatures are never rebuilt by hand. The file is parsed with
+[ts-morph](https://ts-morph.com), bodies are blanked **in memory**, and the
+result is re-printed — so generics, overloads and your original formatting
+survive exactly as written.
+
+### Your files are never modified
+
+`codeclue` only reads. It never calls `.save()`, never writes, and never creates
+files next to yours. The test suite hashes each fixture before and after every
+run and fails if a single byte changes.
 
 ## JSON output
 
 Every command supports `--json` and returns the same envelope:
 
+```bash
+clue outline src/index.ts --json
+```
+
 ```json
 {
   "ok": true,
-  "command": "version",
-  "version": "0.1.0",
+  "command": "outline",
+  "version": "0.1.0-alpha.0",
   "contract": 1,
-  "data": {},
+  "data": {
+    "file": "src/index.ts",
+    "outline": "export function hi(name: string): string { /* ... */ }\n",
+    "originalTokens": 569,
+    "outlineTokens": 371,
+    "savedPercent": 35
+  },
   "error": null
 }
 ```
 
-`contract` is a version handshake for the shape of `data`. It is bumped on
-any breaking change, so a consumer expecting an older contract fails loudly
-instead of misreading the payload silently.
+On failure, `ok` is `false`, `data` is `null`, and `error` is filled in:
 
-On failure: `ok` is `false`, `data` is `null`, and `error` carries `code`
-and `message`. Results go to stdout, progress and status go to stderr, so
-`clue trace x | pbcopy` copies only the result.
+```json
+{
+  "ok": false,
+  "command": "outline",
+  "version": "0.1.0-alpha.0",
+  "contract": 1,
+  "data": null,
+  "error": { "code": "ENOENT", "message": "File tidak ditemukan: nope.ts" }
+}
+```
 
-Token counts are estimates (characters ÷ 4) and are always shown as such —
-tokenizers differ between models.
+**`contract` is a version handshake for the shape of `data`.** It is bumped on
+any breaking change, so a consumer expecting an older contract can fail loudly
+instead of misreading the payload. Check it before trusting `data`.
+
+### Error codes
+
+| Code | Meaning |
+| --- | --- |
+| `EARGS` | A required argument is missing |
+| `ENOENT` | The file does not exist |
+| `EISDIR` | The path is a directory, not a file |
+| `UNKNOWN_COMMAND` | No such command |
+| `NO_COMMAND` | `--json` was passed with no command |
+| `INTERNAL_ERROR` | Anything unexpected |
+
+Exit code is `0` on success and `1` on failure.
+
+## stdout vs stderr
+
+Results go to **stdout**. Progress, warnings and the savings summary go to
+**stderr**. That split is deliberate:
+
+```bash
+clue outline src/index.ts | pbcopy    # copies the outline only
+```
+
+The `~3293 token -> ~774 token` line never lands in your clipboard, your pipe, or
+your redirected file.
+
+## tsconfig
+
+`codeclue` walks up from the target file looking for `tsconfig.json`. If it finds
+one it is used, so your `compilerOptions` and path aliases are understood — but
+its file list is **not** loaded, so pointing at one file in a large repo does not
+drag in thousands of others.
+
+If no `tsconfig.json` is found, it falls back to defaults and prints a warning to
+stderr. It does not fail.
+
+## Token counts are estimates
+
+Counts use `characters ÷ 4` and are always shown as approximate (`~774 token`).
+Different models tokenize differently — treat these as a ratio, not a bill.
+
+<a id="why-it-is-small"></a>
+
+## Why it is small
+
+One runtime dependency: `ts-morph`. No argument-parsing library, no colour
+library. `argv` is parsed by hand.
+
+## Why this exists
+
+An AI coding agent dropped into an unfamiliar codebase reads dozens of whole
+files to answer one question. Most of that is irrelevant — the agent needs to
+know *what exists and what shape it has*, not how it is implemented.
+
+The guiding rule:
+
+> The CLI does what is deterministic. The model does what needs reasoning.
+
+Parsing an AST, walking an import graph and counting tokens always produce the
+same answer, so they belong in a CLI, not in a context window. Every mechanical
+step moved out of the model is a token not burned.
 
 ## License
 

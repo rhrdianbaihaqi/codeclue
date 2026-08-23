@@ -1,7 +1,7 @@
 {
   "name": "codeclue",
   "version": "0.1.0-alpha.0",
-  "description": "Extract codebase structure for AI coding agents — understand unfamiliar code with minimal tokens",
+  "description": "TypeScript outlines for AI coding agents — signatures without bodies, a fraction of the tokens",
   "scripts": {
     "test": "vitest run",
     "build": "tsup",
@@ -15,7 +15,12 @@
     "llm",
     "context",
     "tokens",
-    "typescript"
+    "typescript",
+    "cli",
+    "ast",
+    "ts-morph",
+    "code-analysis",
+    "context-window"
   ],
   "author": "rahardianz",
   "license": "MIT",
