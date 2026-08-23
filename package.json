@@ -7,7 +7,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "ai",
@@ -33,5 +34,13 @@
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhrdianbaihaqi/codeclue.git"
+  },
+  "homepage": "https://github.com/rhrdianbaihaqi/codeclue#readme",
+  "bugs": {
+    "url": "https://github.com/rhrdianbaihaqi/codeclue/issues"
   }
 }
