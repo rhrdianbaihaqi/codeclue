@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "description": "Extract codebase structure for AI coding agents — understand unfamiliar code with minimal tokens",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "ai",
@@ -23,5 +27,11 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
 }
