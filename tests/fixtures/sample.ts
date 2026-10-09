@@ -89,3 +89,15 @@ export default class Client {
     return fetch(path);
   }
 }
+
+export class Registry {
+  static readonly entries = new Map<string, number>();
+
+  static {
+    Registry.entries.set("boot", 1);
+  }
+
+  static lookup(key: string): number | undefined {
+    return Registry.entries.get(key);
+  }
+}

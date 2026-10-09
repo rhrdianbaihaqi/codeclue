@@ -95,6 +95,13 @@ describe("body hilang", () => {
     expect(text).not.toContain(needle);
   });
 
+  it("blok static di class dikosongkan", () => {
+    expect(text).toContain("static { /* ... */ }");
+    expect(text).not.toContain('Registry.entries.set("boot", 1)');
+    expect(text).toContain("static lookup(key: string): number | undefined");
+    expect(text).toContain("static readonly entries = new Map<string, number>();");
+  });
+
   it("komentar internal ikut hilang", () => {
     expect(text).not.toContain("komentar internal");
   });

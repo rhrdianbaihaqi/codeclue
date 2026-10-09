@@ -3,6 +3,7 @@ import { extname } from "node:path";
 import { Node } from "ts-morph";
 import type {
   ArrowFunction,
+  ClassStaticBlockDeclaration,
   ConstructorDeclaration,
   FunctionDeclaration,
   FunctionExpression,
@@ -47,6 +48,7 @@ interface Edit {
 
 type FunctionLike =
   | ArrowFunction
+  | ClassStaticBlockDeclaration
   | ConstructorDeclaration
   | FunctionDeclaration
   | FunctionExpression
@@ -61,6 +63,7 @@ function isFunctionLike(node: Node): node is FunctionLike {
     Node.isConstructorDeclaration(node) ||
     Node.isGetAccessorDeclaration(node) ||
     Node.isSetAccessorDeclaration(node) ||
+    Node.isClassStaticBlockDeclaration(node) ||
     Node.isFunctionExpression(node) ||
     Node.isArrowFunction(node)
   );
