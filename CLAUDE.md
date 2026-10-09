@@ -64,7 +64,7 @@ npm test                         # vitest run (semua test)
 npx vitest run tests/outline.test.ts           # satu file test
 npx vitest run -t "nama test"                  # satu test berdasarkan nama
 npm run typecheck                # tsc --noEmit (strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes)
-node dist/cli.js outline src/cli.ts --json     # jalankan CLI hasil build
+node dist/cli.js outline src/run.ts --json     # jalankan CLI hasil build
 ```
 
 Tidak ada linter. `prepublishOnly` menjalankan build + test.
@@ -78,11 +78,14 @@ dikerjakan satu sesi per deliverable). Fixture saat ini hanya
 
 ## Arsitektur
 
-- `src/cli.ts` memegang parser argv manual dan tabel `COMMANDS`. Tiap handler
+- `src/cli.ts` hanya entry tipis (shebang + `run(process.argv)`) supaya modul bisa
+  di-import tanpa efek samping. Logikanya di `src/run.ts`: parser argv manual,
+  tabel `COMMANDS`, dan `run(argv, io)` yang menerima `stdout`/`stderr` injeksi
+  untuk test (`tests/cli.test.ts`). Tiap handler
   mengembalikan `{ data, human, note }`: `data` masuk envelope `--json`, `human`
   ke stdout, `note` (ringkasan token) ke stderr dan disembunyikan saat `--json`.
   Error dilempar sebagai `CliError(code, message)` (`lib/errors.ts`) dan
-  dikonversi menjadi `fail()` envelope di `run()`. `run()` diekspor untuk test.
+  dikonversi menjadi `fail()` envelope di `run()`.
 - `parseArgv`: flag boolean didaftar di `BOOLEAN_FLAGS`; flag lain dianggap
   bernilai. Flag boolean baru WAJIB ditambahkan ke set itu, kalau tidak ia
   menelan argumen posisional berikutnya.
@@ -110,7 +113,8 @@ codeclue/
 ├── skills/
 │   └── codeclue-explore/SKILL.md
 ├── src/
-│   ├── cli.ts              # entry, shebang, parse argv
+│   ├── cli.ts              # entry tipis, shebang
+│   ├── run.ts              # parse argv, router, run(argv, io)
 │   ├── envelope.ts         # ok() / fail()
 │   ├── commands/
 │   │   ├── outline.ts
