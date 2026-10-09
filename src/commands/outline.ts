@@ -146,7 +146,15 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
 
   // Hanya file target yang ditambahkan. Tidak pernah ada .save() di sini —
   // seluruh manipulasi berhenti di memori, file di disk tidak disentuh.
-  const project = createProject(tsConfigFilePath);
+  let project;
+  try {
+    project = createProject(tsConfigFilePath);
+  } catch (err) {
+    // tsconfig rusak tidak boleh menggagalkan outline — alias tidak dipakai di sini.
+    if (!(err instanceof CliError) || err.code !== "ETSCONFIG") throw err;
+    warn(`Warning: ${err.message} (falling back to defaults)`);
+    project = createProject();
+  }
   const sf = project.addSourceFileAtPath(filePath);
   const original = sf.getFullText();
 

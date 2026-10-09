@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { outline } from "../src/commands/outline";
-import { findTsConfig } from "../src/lib/project";
+import { createProject, findTsConfig } from "../src/lib/project";
 
 const FIXTURE = fileURLToPath(new URL("./fixtures/sample.ts", import.meta.url));
 
@@ -42,5 +42,30 @@ describe("fallback tanpa tsconfig", () => {
     const warnings: string[] = [];
     outline(FIXTURE, { warn: (m) => warnings.push(m) });
     expect(warnings).toEqual([]);
+  });
+});
+
+describe("tsconfig rusak", () => {
+  it("fallback ke default dengan peringatan yang menyebut file tsconfig", () => {
+    const dir = mkdtempSync(join(tmpdir(), "clue-badtsconfig-"));
+    writeFileSync(join(dir, "tsconfig.json"), "{ bad");
+    const file = join(dir, "a.ts");
+    writeFileSync(file, "export function f(): number {\n  return 1;\n}\n");
+
+    const warnings: string[] = [];
+    const result = outline(file, { warn: (m) => warnings.push(m) });
+
+    expect(result.outline).toContain("export function f(): number");
+    expect(result.outline).not.toContain("return 1");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/Cannot read .*tsconfig\.json/);
+    expect(warnings[0]).toMatch(/falling back to defaults/);
+  });
+
+  it("createProject melempar ETSCONFIG", () => {
+    const dir = mkdtempSync(join(tmpdir(), "clue-badtsconfig-"));
+    const tsconfig = join(dir, "tsconfig.json");
+    writeFileSync(tsconfig, "{ bad");
+    expect(() => createProject(tsconfig)).toThrow(expect.objectContaining({ code: "ETSCONFIG" }));
   });
 });

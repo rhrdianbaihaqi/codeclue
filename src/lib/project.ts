@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { Project, ts } from "ts-morph";
+import { CliError } from "./errors";
 
 const BASE_OPTIONS = {
   // Tanpa ini, tsconfig dengan include luas akan memuat ribuan file dan
@@ -30,11 +31,17 @@ export function findTsConfig(fromPath: string): string | undefined {
 /**
  * Project ts-morph seringan mungkin. Kalau tsconfig ditemukan ia dipakai —
  * supaya alias `@/` dan compilerOptions repo dikenali — tapi file-nya tidak
- * ikut dimuat; hanya file target yang ditambahkan pemanggil.
+ * ikut dimuat; hanya file target yang ditambahkan pemanggil. tsconfig yang
+ * tidak bisa dibaca melempar `CliError("ETSCONFIG")`.
  */
 export function createProject(tsConfigFilePath?: string): Project {
   if (tsConfigFilePath === undefined) {
     return new Project({ ...BASE_OPTIONS, compilerOptions: FALLBACK_COMPILER_OPTIONS });
   }
-  return new Project({ ...BASE_OPTIONS, tsConfigFilePath });
+  try {
+    return new Project({ ...BASE_OPTIONS, tsConfigFilePath });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new CliError("ETSCONFIG", `Cannot read ${tsConfigFilePath}: ${reason}`);
+  }
 }
