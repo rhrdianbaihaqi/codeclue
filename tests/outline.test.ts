@@ -175,3 +175,35 @@ describe("performa", () => {
     expect(big.outline).not.toContain("return 1");
   });
 });
+
+describe("input tidak valid", () => {
+  const tmp = (name: string, content: string): string => {
+    const file = join(mkdtempSync(join(tmpdir(), "clue-bad-")), name);
+    writeFileSync(file, content);
+    return file;
+  };
+
+  it("menolak ekstensi yang tidak didukung dengan EUNSUPPORTED", () => {
+    const file = tmp("data.json", "{}");
+    expect(() => outline(file, { warn: () => {} })).toThrow(/Unsupported file type/);
+    try {
+      outline(file, { warn: () => {} });
+    } catch (err) {
+      expect((err as { code?: string }).code).toBe("EUNSUPPORTED");
+    }
+  });
+
+  it("sintaks rusak: tetap menghasilkan outline, memberi peringatan, dan melaporkan jumlah error", () => {
+    const warnings: string[] = [];
+    const result = outline(tmp("bad.ts", "export function f( {"), { warn: (m) => warnings.push(m) });
+    expect(result.syntaxErrors).toBeGreaterThan(0);
+    expect(warnings.join("\n")).toMatch(/syntax error/);
+  });
+
+  it("sintaks valid: syntaxErrors 0 dan tanpa peringatan sintaks", () => {
+    const warnings: string[] = [];
+    const result = outline(tmp("ok.ts", "export const x = 1;\n"), { warn: (m) => warnings.push(m) });
+    expect(result.syntaxErrors).toBe(0);
+    expect(warnings.filter((m) => /syntax/.test(m))).toEqual([]);
+  });
+});

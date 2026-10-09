@@ -1,4 +1,5 @@
 import { statSync } from "node:fs";
+import { extname } from "node:path";
 import { Node } from "ts-morph";
 import type {
   ArrowFunction,
@@ -17,6 +18,11 @@ import { createProject, findTsConfig } from "../lib/project";
 
 const BODY_PLACEHOLDER = "{ /* ... */ }";
 
+const SUPPORTED_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
+
+/** Berapa pesan sintaks yang ditampilkan sebelum diringkas. */
+const MAX_SYNTAX_MESSAGES = 3;
+
 export interface OutlineOptions {
   /** Ke mana peringatan non-fatal dikirim. Default: stderr. */
   warn?: (message: string) => void;
@@ -28,6 +34,8 @@ export interface OutlineResult {
   originalTokens: number;
   outlineTokens: number;
   savedPercent: number;
+  /** Jumlah error sintaks pada file sumber; 0 berarti parse bersih. */
+  syntaxErrors: number;
 }
 
 /** Satu penggantian teks pada rentang node tertentu. */
@@ -123,6 +131,14 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
     throw new CliError("EISDIR", `${filePath} is a directory, not a file`);
   }
 
+  const ext = extname(filePath).toLowerCase();
+  if (!SUPPORTED_EXTENSIONS.has(ext)) {
+    throw new CliError(
+      "EUNSUPPORTED",
+      `Unsupported file type "${ext || "(none)"}": ${filePath}. Supported: ${[...SUPPORTED_EXTENSIONS].join(", ")}`,
+    );
+  }
+
   const tsConfigFilePath = findTsConfig(filePath);
   if (tsConfigFilePath === undefined) {
     warn(`Warning: no tsconfig.json found from ${filePath}; falling back to defaults.`);
@@ -133,6 +149,18 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
   const project = createProject(tsConfigFilePath);
   const sf = project.addSourceFileAtPath(filePath);
   const original = sf.getFullText();
+
+  // Outline dari kode yang gagal di-parse hanya tebakan. Tetap dihasilkan
+  // (kalau ragu, pertahankan), tapi pembaca harus tahu.
+  const syntaxDiagnostics = project.getProgram().getSyntacticDiagnostics(sf);
+  if (syntaxDiagnostics.length > 0) {
+    warn(`Warning: ${syntaxDiagnostics.length} syntax error(s) in ${filePath}; outline may be incomplete or wrong.`);
+    for (const d of syntaxDiagnostics.slice(0, MAX_SYNTAX_MESSAGES)) {
+      const text = d.getMessageText();
+      const message = typeof text === "string" ? text : text.getMessageText();
+      warn(`  line ${d.getLineNumber() ?? "?"}: ${message}`);
+    }
+  }
 
   // Edit di-splice langsung ke teks asli, dari belakang ke depan supaya
   // posisi edit berikutnya tidak bergeser. Memanggil replaceWithText per edit
@@ -153,5 +181,6 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
     originalTokens,
     outlineTokens,
     savedPercent: savedPercent(originalTokens, outlineTokens),
+    syntaxErrors: syntaxDiagnostics.length,
   };
 }
