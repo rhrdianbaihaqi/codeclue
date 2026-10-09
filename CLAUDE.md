@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # codeclue
 
 CLI yang mengekstrak struktur codebase TypeScript untuk konsumsi AI coding agent.
@@ -51,7 +55,53 @@ sf.forEachDescendant(node => {
 const outline = sf.getFullText();
 ```
 
-## Struktur direktori
+## Perintah
+
+```bash
+npm run build                    # tsup -> dist/cli.js (ESM, shebang)
+npm run dev                      # tsup --watch
+npm test                         # vitest run (semua test)
+npx vitest run tests/outline.test.ts           # satu file test
+npx vitest run -t "nama test"                  # satu test berdasarkan nama
+npm run typecheck                # tsc --noEmit (strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes)
+node dist/cli.js outline src/cli.ts --json     # jalankan CLI hasil build
+```
+
+Tidak ada linter. `prepublishOnly` menjalankan build + test.
+
+## Status implementasi
+
+Baru `outline` (dan `version`) yang ada. `graph`, `trace`, `survey`, serta
+`lib/resolve.ts` di bawah masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
+dikerjakan satu sesi per deliverable). Fixture saat ini hanya
+`tests/fixtures/sample.ts`; daftar cakupan fixture di bagian Testing adalah target.
+
+## Arsitektur
+
+- `src/cli.ts` memegang parser argv manual dan tabel `COMMANDS`. Tiap handler
+  mengembalikan `{ data, human, note }`: `data` masuk envelope `--json`, `human`
+  ke stdout, `note` (ringkasan token) ke stderr dan disembunyikan saat `--json`.
+  Error dilempar sebagai `CliError(code, message)` (`lib/errors.ts`) dan
+  dikonversi menjadi `fail()` envelope di `run()`. `run()` diekspor untuk test.
+- `parseArgv`: flag boolean didaftar di `BOOLEAN_FLAGS`; flag lain dianggap
+  bernilai. Flag boolean baru WAJIB ditambahkan ke set itu, kalau tidak ia
+  menelan argumen posisional berikutnya.
+- `src/envelope.ts`: `CONTRACT` adalah version handshake skema `data` — naikkan
+  hanya bila bentuk `data` berubah secara breaking. `src/version.ts` adalah
+  sumber `VERSION`.
+- `lib/project.ts`: ts-morph `Project` sengaja ringan (tanpa memuat file dari
+  tsconfig, tanpa lib files, tanpa dependency resolution); tsconfig dipakai
+  hanya agar alias dan compilerOptions dikenali. Pemanggil menambah file sendiri.
+- `commands/outline.ts`: implementasinya mengumpulkan daftar edit (body blok ->
+  `{ /* ... */ }`, JSDoc dipangkas ke kalimat pertama), lalu menerapkannya dari
+  belakang ke depan agar posisi tidak bergeser. Arrow dengan body ekspresi
+  dibiarkan; fungsi bersarang dilewati (`traversal.skip()`). Tidak pernah
+  memanggil `.save()` — `tests/safety.test.ts` menegakkan ini (hash file
+  sebelum/sesudah dan pemindaian `src/` untuk pemanggilan tulis).
+- Import antar file di `src/` ditulis tanpa ekstensi (`"./commands/outline"`);
+  tsup yang melakukan bundling.
+
+## Struktur direktori (target akhir)
 
 ```
 codeclue/
