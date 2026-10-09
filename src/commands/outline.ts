@@ -134,13 +134,16 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
   const sf = project.addSourceFileAtPath(filePath);
   const original = sf.getFullText();
 
-  // Dari belakang ke depan supaya posisi edit berikutnya tidak bergeser.
+  // Edit di-splice langsung ke teks asli, dari belakang ke depan supaya
+  // posisi edit berikutnya tidak bergeser. Memanggil replaceWithText per edit
+  // membuat ts-morph mem-parse ulang seluruh file tiap kali (O(n^2)).
+  // Rentang edit tidak pernah bertumpuk: fungsi bersarang dilewati di collectEdits.
   const edits = collectEdits(sf).sort((a, b) => b.start - a.start);
+  let result = original;
   for (const edit of edits) {
-    sf.getDescendantAtStartWithWidth(edit.start, edit.width)?.replaceWithText(edit.text);
+    result = result.slice(0, edit.start) + edit.text + result.slice(edit.start + edit.width);
   }
 
-  const result = sf.getFullText();
   const originalTokens = estimateTokens(original);
   const outlineTokens = estimateTokens(result);
 

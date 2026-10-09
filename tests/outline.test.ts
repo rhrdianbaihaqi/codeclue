@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Project, ts } from "ts-morph";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -158,5 +161,17 @@ describe("error", () => {
     expect(() => outline(fileURLToPath(new URL("./fixtures", import.meta.url)))).toThrowError(
       /is a directory/,
     );
+  });
+});
+
+describe("performa", () => {
+  it("file dengan 2000 fungsi selesai kurang dari 5 detik", () => {
+    const dir = mkdtempSync(join(tmpdir(), "clue-perf-"));
+    const file = join(dir, "big.ts");
+    writeFileSync(file, "export function f(){return 1}\n".repeat(2000));
+    const start = Date.now();
+    const big = outline(file, { warn: () => {} });
+    expect(Date.now() - start).toBeLessThan(5000);
+    expect(big.outline).not.toContain("return 1");
   });
 });
