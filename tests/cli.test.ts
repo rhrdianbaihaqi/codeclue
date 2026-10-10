@@ -123,3 +123,34 @@ describe("run: mode teks", () => {
     expect(exec("--version").stdout.trim()).toBe(`codeclue ${VERSION}`);
   });
 });
+
+describe("run: graph", () => {
+  const MINI_ENTRY = fileURLToPath(new URL("./fixtures/mini/src/index.ts", import.meta.url));
+
+  it("--json: envelope dengan nodes/edges/external/cycles", () => {
+    const { code, stdout, stderr } = exec("graph", MINI_ENTRY, "--depth", "2", "--json");
+    expect(code).toBe(0);
+    expect(stderr).not.toMatch(/\S/);
+    const env = JSON.parse(stdout);
+    expect(env).toMatchObject({ ok: true, command: "graph", contract: CONTRACT });
+    expect(env.data.nodes.length).toBeGreaterThan(1);
+    expect(env.data).toHaveProperty("edges");
+    expect(env.data).toHaveProperty("external");
+    expect(env.data.cycles).toHaveLength(1);
+  });
+
+  it("mode teks: peta ke stdout, ringkasan ke stderr", () => {
+    const { stdout, stderr } = exec("graph", MINI_ENTRY);
+    expect(stdout).toContain("(entry, depth 2)");
+    expect(stderr).toMatch(/\d+ files, \d+ external/);
+  });
+
+  it("--depth tanpa nilai atau bukan angka: EARGS", () => {
+    expect(JSON.parse(exec("graph", MINI_ENTRY, "--depth", "abc", "--json").stdout).error.code).toBe("EARGS");
+    expect(JSON.parse(exec("graph", MINI_ENTRY, "--depth", "--json").stdout).error.code).toBe("EARGS");
+  });
+
+  it("tanpa file: EARGS", () => {
+    expect(JSON.parse(exec("graph", "--json").stdout).error.code).toBe("EARGS");
+  });
+});

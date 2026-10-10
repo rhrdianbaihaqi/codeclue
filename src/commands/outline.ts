@@ -1,5 +1,3 @@
-import { statSync } from "node:fs";
-import { extname } from "node:path";
 import { Node } from "ts-morph";
 import type {
   ArrowFunction,
@@ -17,12 +15,11 @@ import { estimateTokens, savedPercent } from "../lib/count";
 import { applyEdits } from "../lib/edits";
 import type { Edit } from "../lib/edits";
 import { CliError } from "../lib/errors";
+import { assertSourceFile } from "../lib/files";
 import { declarationRange, pruneImportEdits } from "../lib/imports";
 import { createProject, findTsConfig } from "../lib/project";
 
 const BODY_PLACEHOLDER = "{ /* ... */ }";
-
-const SUPPORTED_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
 
 /** Berapa pesan sintaks yang ditampilkan sebelum diringkas. */
 const MAX_SYNTAX_MESSAGES = 3;
@@ -126,23 +123,7 @@ function collectEdits(sf: SourceFile): Edit[] {
 export function outline(filePath: string, options: OutlineOptions = {}): OutlineResult {
   const warn = options.warn ?? ((message: string) => process.stderr.write(`${message}\n`));
 
-  let stat;
-  try {
-    stat = statSync(filePath);
-  } catch {
-    throw new CliError("ENOENT", `File not found: ${filePath}`);
-  }
-  if (stat.isDirectory()) {
-    throw new CliError("EISDIR", `${filePath} is a directory, not a file`);
-  }
-
-  const ext = extname(filePath).toLowerCase();
-  if (!SUPPORTED_EXTENSIONS.has(ext)) {
-    throw new CliError(
-      "EUNSUPPORTED",
-      `Unsupported file type "${ext || "(none)"}": ${filePath}. Supported: ${[...SUPPORTED_EXTENSIONS].join(", ")}`,
-    );
-  }
+  assertSourceFile(filePath);
 
   const tsConfigFilePath = findTsConfig(filePath);
   if (tsConfigFilePath === undefined) {

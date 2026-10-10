@@ -45,3 +45,30 @@ export function createProject(tsConfigFilePath?: string): Project {
     throw new CliError("ETSCONFIG", `Cannot read ${tsConfigFilePath}: ${reason}`);
   }
 }
+
+const FALLBACK_RESOLUTION_OPTIONS: ts.CompilerOptions = {
+  allowJs: true,
+  resolveJsonModule: true,
+  jsx: ts.JsxEmit.Preserve,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  target: ts.ScriptTarget.ES2022,
+};
+
+/**
+ * compilerOptions untuk resolusi modul, tanpa membangun ts-morph `Project`.
+ * Tanpa tsconfig dipakai default yang longgar. tsconfig yang tidak bisa
+ * dibaca melempar `CliError("ETSCONFIG")`; error parse lain (mis. "tidak ada
+ * input") diabaikan karena kita hanya butuh opsinya, bukan daftar file.
+ */
+export function loadCompilerOptions(tsConfigFilePath?: string): ts.CompilerOptions {
+  if (tsConfigFilePath === undefined) return { ...FALLBACK_RESOLUTION_OPTIONS };
+
+  const read = ts.readConfigFile(tsConfigFilePath, ts.sys.readFile);
+  if (read.error !== undefined) {
+    const reason = ts.flattenDiagnosticMessageText(read.error.messageText, "\n");
+    throw new CliError("ETSCONFIG", `Cannot read ${tsConfigFilePath}: ${reason}`);
+  }
+  return ts.parseJsonConfigFileContent(read.config, ts.sys, dirname(tsConfigFilePath), undefined, tsConfigFilePath)
+    .options;
+}

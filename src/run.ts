@@ -1,3 +1,4 @@
+import { DEFAULT_DEPTH, formatGraph, graph } from "./commands/graph";
 import { outline } from "./commands/outline";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
@@ -80,9 +81,11 @@ const HELP = `codeclue ${VERSION} — extract codebase structure for AI coding a
 
 Commands
   outline <file>       One file's skeleton: signatures, types, exports
+  graph <file>         Import graph from a file (--depth N, default 2)
   version              Print the version and contract number
 
 Options
+  --depth N            Graph depth from the entry file (graph only)
   --json               Emit the JSON envelope
   --help, -h           Show this help
   --version, -v        Print the version
@@ -116,6 +119,26 @@ const COMMANDS: Record<string, Handler> = {
     data: { name: "codeclue", version: VERSION, node: process.version },
     human: `codeclue ${VERSION}`,
   }),
+
+  graph: (parsed, io) => {
+    const file = parsed.positionals[0];
+    if (file === undefined) {
+      throw new CliError("EARGS", "Missing required argument <file>. Example: clue graph src/run.ts --depth 2");
+    }
+    const raw = parsed.flags.depth;
+    const depth = raw === undefined ? DEFAULT_DEPTH : Number(raw);
+    if (raw === true || !Number.isInteger(depth) || depth < 0) {
+      throw new CliError("EARGS", `--depth must be a non-negative integer, got ${raw === true ? "nothing" : String(raw)}`);
+    }
+    const result = graph(file, { depth, warn: (message) => io.stderr(`${message}\n`) });
+    return {
+      data: result,
+      human: formatGraph(result),
+      note:
+        `${result.nodes.length} files, ${result.external.length} external, ` +
+        `${result.unresolved.length} unresolved, ${result.cycles.length} cycle(s)`,
+    };
+  },
 
   outline: (parsed, io) => {
     const file = parsed.positionals[0];

@@ -71,8 +71,7 @@ Tidak ada linter. `prepublishOnly` menjalankan build + test.
 
 ## Status implementasi
 
-Baru `outline` (dan `version`) yang ada. `graph`, `trace`, `survey`, serta
-`lib/resolve.ts` di bawah masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
+`outline`, `graph`, dan `version` sudah ada. `trace` dan `survey` masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
 dikerjakan satu sesi per deliverable). Fixture: `tests/fixtures/sample.ts` (outline)
 dan repo mini `tests/fixtures/mini/` (alias `@/`, circular import, `export *`,
 pruning import). Mini repo dikecualikan dari tsconfig root agar `tsc` utama tidak
@@ -107,6 +106,15 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   dibiarkan; fungsi bersarang dilewati (`traversal.skip()`). Tidak pernah
   memanggil `.save()` — `tests/safety.test.ts` menegakkan ini (hash file
   sebelum/sesudah dan pemindaian `src/` untuk pemanggilan tulis).
+- `commands/graph.ts` + `lib/resolve.ts`: BFS per lapis dari entry; specifier diambil
+  dengan `ts.preProcessFile` (tanpa membangun ts-morph `Project`) dan di-resolve
+  dengan `ts.resolveModuleName` memakai compilerOptions tsconfig (`paths`, ekstensi
+  implisit, `/index`, `.js`->`.ts`). Hasil di `node_modules` atau
+  `isExternalLibraryImport` selalu dilaporkan `external` dan TIDAK ditelusuri
+  (aturan keras #5). Node di kedalaman maksimum tidak diperluas, jadi `importedBy`
+  hanya memuat importer yang ikut diperluas. Siklus dicari dengan Tarjan iteratif
+  dan dilaporkan di `cycles`; BFS memakai set visited sehingga tidak looping.
+  Keluaran diurutkan agar deterministik. `trace` nanti memakai `graph()`.
 - Import antar file di `src/` ditulis tanpa ekstensi (`"./commands/outline"`);
   tsup yang melakukan bundling.
 
