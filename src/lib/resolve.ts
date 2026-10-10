@@ -1,4 +1,7 @@
+import { realpathSync, statSync } from "node:fs";
+import { dirname, extname, resolve as resolvePath } from "node:path";
 import { ts } from "ts-morph";
+import { isSupportedSource } from "./files";
 
 export type Resolution =
   | { kind: "file"; path: string }
@@ -38,6 +41,23 @@ function matchesPathAlias(specifier: string, paths: ts.MapLike<string[]> | undef
 }
 
 /**
+ * Import relatif ke file non-TS/JS (`./App.svelte`, `./app.css`, `./logo.svg?url`)
+ * tidak dipahami resolver TypeScript, tapi filenya nyata. Dikembalikan sebagai
+ * path agar masuk graph sebagai daun (tidak di-parse), bukan "rusak".
+ */
+function resolveAsset(specifier: string, fromFile: string): string | undefined {
+  if (!isRelative(specifier)) return undefined;
+  const clean = specifier.split(/[?#]/)[0]!;
+  if (extname(clean) === "" || isSupportedSource(clean)) return undefined;
+  const candidate = resolvePath(dirname(fromFile), clean);
+  try {
+    return statSync(candidate).isFile() ? realpathSync(candidate) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Resolusi import memakai resolver modul TypeScript sendiri, jadi `paths`,
  * ekstensi implisit, `/index`, dan pemetaan `.js` -> `.ts` mengikuti perilaku
  * kompiler. Hasil yang berada di `node_modules` (atau ditandai
@@ -63,6 +83,8 @@ export function createResolver(options: ts.CompilerOptions, cwd: string): Resolv
 
       // Tidak ketemu: relatif atau cocok alias = import rusak; sisanya dianggap
       // paket yang tidak terpasang (tetap dicatat sebagai eksternal).
+      const asset = resolveAsset(specifier, fromFile);
+      if (asset !== undefined) return { kind: "file", path: asset };
       if (isRelative(specifier) || matchesPathAlias(specifier, options.paths)) return { kind: "unresolved" };
       return { kind: "external", name: packageName(specifier) };
     },

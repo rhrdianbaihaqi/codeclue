@@ -71,7 +71,7 @@ Tidak ada linter. `prepublishOnly` menjalankan build + test.
 
 ## Status implementasi
 
-`outline`, `graph`, dan `version` sudah ada. `trace` dan `survey` masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
+`outline`, `graph`, `trace`, dan `version` sudah ada. Hanya `survey` yang masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
 dikerjakan satu sesi per deliverable). Fixture: `tests/fixtures/sample.ts` (outline)
 dan repo mini `tests/fixtures/mini/` (alias `@/`, circular import, `export *`,
 pruning import). Mini repo dikecualikan dari tsconfig root agar `tsc` utama tidak
@@ -114,7 +114,17 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   (aturan keras #5). Node di kedalaman maksimum tidak diperluas, jadi `importedBy`
   hanya memuat importer yang ikut diperluas. Siklus dicari dengan Tarjan iteratif
   dan dilaporkan di `cycles`; BFS memakai set visited sehingga tidak looping.
-  Keluaran diurutkan agar deterministik. `trace` nanti memakai `graph()`.
+  Keluaran diurutkan agar deterministik. Import relatif ke file non-TS yang ada
+  (`.svelte`, `.css`, `?url`) menjadi daun graph, bukan `unresolved`.
+- `commands/trace.ts`: memanggil `graph(depth + 1)` — node satu tingkat di luar
+  `--depth` tampil sebagai path agar pembaca tahu ada yang di luar batas. `classify()`
+  (murni, diuji terpisah) memetakan kedalaman ke lapis `full/outline/exports/path`,
+  lalu menggeser: fan-in >= `FAN_IN_PROMOTE` naik satu lapis (tidak sampai full),
+  test jadi path, `.d.ts`/generated turun satu lapis; entry tidak pernah bergeser.
+  Outline memakai `outlineSourceFile` dengan satu ts-morph `Project` bersama;
+  daftar export murni sintaksis (`lib/exports.ts`). `totals.traceTokens` dihitung
+  dari teks `formatTrace()` — teks itu sengaja tidak memuat angka totals.
+  `vitest.config.ts` mengecualikan `tests/fixtures/**` (ada fixture bernama `*.test.ts`).
 - Import antar file di `src/` ditulis tanpa ekstensi (`"./commands/outline"`);
   tsup yang melakukan bundling.
 

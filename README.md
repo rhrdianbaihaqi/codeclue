@@ -170,14 +170,14 @@ exists anywhere in `src/`.
 
 ## Status
 
-Alpha. Two commands work today, and the roadmap is deliberate rather than long:
+Alpha. Three commands work today, and the roadmap is deliberate rather than long:
 
 | Command | What it does | |
 | --- | --- | --- |
 | `clue outline <file>` | One file's skeleton | ✅ |
 | `clue version` | Version + contract | ✅ |
 | `clue graph <file> --depth N` | Walk the import graph, never entering `node_modules` | ✅ |
-| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists | 🚧 |
+| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists | ✅ |
 | `clue survey [dir]` | Token profile of a repo: heaviest files, suggested ignore list | 🚧 |
 
 🚧 commands print `Unknown command` and exit `1`. The JSON shape may still shift

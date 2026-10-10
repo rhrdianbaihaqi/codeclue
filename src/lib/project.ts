@@ -72,3 +72,22 @@ export function loadCompilerOptions(tsConfigFilePath?: string): ts.CompilerOptio
   return ts.parseJsonConfigFileContent(read.config, ts.sys, dirname(tsConfigFilePath), undefined, tsConfigFilePath)
     .options;
 }
+
+/**
+ * Project ts-morph untuk `filePath`: tsconfig terdekat bila ada dan terbaca,
+ * kalau tidak jatuh ke default dengan peringatan. Alias tidak diperlukan oleh
+ * pemanggil (outline/exports), jadi tsconfig rusak tidak boleh menggagalkan.
+ */
+export function openProject(filePath: string, warn: (message: string) => void): Project {
+  const tsConfigFilePath = findTsConfig(filePath);
+  if (tsConfigFilePath === undefined) {
+    warn(`Warning: no tsconfig.json found from ${filePath}; falling back to defaults.`);
+  }
+  try {
+    return createProject(tsConfigFilePath);
+  } catch (err) {
+    if (!(err instanceof CliError) || err.code !== "ETSCONFIG") throw err;
+    warn(`Warning: ${err.message} (falling back to defaults)`);
+    return createProject();
+  }
+}

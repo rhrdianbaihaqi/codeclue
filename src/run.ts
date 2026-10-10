@@ -1,5 +1,6 @@
 import { DEFAULT_DEPTH, formatGraph, graph } from "./commands/graph";
 import { outline } from "./commands/outline";
+import { DEFAULT_TRACE_DEPTH, formatTrace, trace } from "./commands/trace";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
 import { CliError } from "./lib/errors";
@@ -82,10 +83,11 @@ const HELP = `codeclue ${VERSION} — extract codebase structure for AI coding a
 Commands
   outline <file>       One file's skeleton: signatures, types, exports
   graph <file>         Import graph from a file (--depth N, default 2)
+  trace <entry>        Layered map: entry in full, depth 1 outlines, depth 2 exports
   version              Print the version and contract number
 
 Options
-  --depth N            Graph depth from the entry file (graph only)
+  --depth N            Depth from the entry file (graph, trace; default 2)
   --json               Emit the JSON envelope
   --help, -h           Show this help
   --version, -v        Print the version
@@ -114,6 +116,16 @@ const processIo: Io = {
 
 type Handler = (parsed: ParsedArgv, io: Io) => CommandResult;
 
+function parseDepth(parsed: ParsedArgv, fallback: number): number {
+  const raw = parsed.flags.depth;
+  if (raw === undefined) return fallback;
+  const depth = raw === true ? Number.NaN : Number(raw);
+  if (!Number.isInteger(depth) || depth < 0) {
+    throw new CliError("EARGS", `--depth must be a non-negative integer, got ${raw === true ? "nothing" : String(raw)}`);
+  }
+  return depth;
+}
+
 const COMMANDS: Record<string, Handler> = {
   version: () => ({
     data: { name: "codeclue", version: VERSION, node: process.version },
@@ -125,11 +137,7 @@ const COMMANDS: Record<string, Handler> = {
     if (file === undefined) {
       throw new CliError("EARGS", "Missing required argument <file>. Example: clue graph src/run.ts --depth 2");
     }
-    const raw = parsed.flags.depth;
-    const depth = raw === undefined ? DEFAULT_DEPTH : Number(raw);
-    if (raw === true || !Number.isInteger(depth) || depth < 0) {
-      throw new CliError("EARGS", `--depth must be a non-negative integer, got ${raw === true ? "nothing" : String(raw)}`);
-    }
+    const depth = parseDepth(parsed, DEFAULT_DEPTH);
     const result = graph(file, { depth, warn: (message) => io.stderr(`${message}\n`) });
     return {
       data: result,
@@ -137,6 +145,21 @@ const COMMANDS: Record<string, Handler> = {
       note:
         `${result.nodes.length} files, ${result.external.length} external, ` +
         `${result.unresolved.length} unresolved, ${result.cycles.length} cycle(s)`,
+    };
+  },
+
+  trace: (parsed, io) => {
+    const file = parsed.positionals[0];
+    if (file === undefined) {
+      throw new CliError("EARGS", "Missing required argument <entry>. Example: clue trace src/run.ts --depth 2");
+    }
+    const depth = parseDepth(parsed, DEFAULT_TRACE_DEPTH);
+    const result = trace(file, { depth, warn: (message) => io.stderr(`${message}\n`) });
+    const t = result.totals;
+    return {
+      data: result,
+      human: formatTrace(result),
+      note: `${t.files} files: ~${t.traceTokens} tokens vs ~${t.fullTokens} if read in full (${t.savedPercent}% saved)`,
     };
   },
 

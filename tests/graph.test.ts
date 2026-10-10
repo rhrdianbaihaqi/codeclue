@@ -127,3 +127,20 @@ describe("resolve helpers", () => {
     expect(extractSpecifiers(text).sort()).toEqual(["./a", "./b", "./c", "./d", "./e", "./types"]);
   });
 });
+
+describe("graph: aset non-TS", () => {
+  it("import ke .svelte/.css yang ada menjadi daun graph, bukan unresolved", () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "clue-asset-")));
+    writeFileSync(join(dir, "App.svelte"), 'import "./inner";\n<script></script>\n');
+    writeFileSync(join(dir, "app.css"), "body {}\n");
+    writeFileSync(
+      join(dir, "main.ts"),
+      'import App from "./App.svelte";\nimport "./app.css";\nimport logo from "./app.css?url";\nimport "./gone.svelte";\nexport { App, logo };\n',
+    );
+    const r = graph(join(dir, "main.ts"), { warn: () => {}, cwd: dir, depth: 3 });
+    expect(paths(r)).toEqual(["main.ts", "App.svelte", "app.css"]);
+    expect(r.unresolved).toEqual([{ from: "main.ts", specifier: "./gone.svelte" }]);
+    // daun tidak diperluas: isi App.svelte tidak di-parse
+    expect(r.edges.map((e) => e.from)).not.toContain("App.svelte");
+  });
+});

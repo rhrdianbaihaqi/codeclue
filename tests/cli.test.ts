@@ -154,3 +154,29 @@ describe("run: graph", () => {
     expect(JSON.parse(exec("graph", "--json").stdout).error.code).toBe("EARGS");
   });
 });
+
+describe("run: trace", () => {
+  const ENTRY = fileURLToPath(new URL("./fixtures/mini/src/main.ts", import.meta.url));
+
+  it("--json: envelope dengan files, layer, dan totals", () => {
+    const { code, stdout } = exec("trace", ENTRY, "--json");
+    expect(code).toBe(0);
+    const env = JSON.parse(stdout);
+    expect(env).toMatchObject({ ok: true, command: "trace", contract: CONTRACT });
+    expect(env.data.files[0]).toMatchObject({ depth: 0, layer: "full" });
+    expect(env.data.totals).toHaveProperty("fullTokens");
+    expect(env.data.totals).toHaveProperty("traceTokens");
+  });
+
+  it("mode teks: peta bersih di stdout, perbandingan token di stderr", () => {
+    const { stdout, stderr } = exec("trace", ENTRY);
+    expect(stdout).toMatch(/### \S*main\.ts \[entry · full\]/);
+    expect(stdout).not.toMatch(/tokens vs/);
+    expect(stderr).toMatch(/files: ~\d+ tokens vs ~\d+ if read in full/);
+  });
+
+  it("argumen salah: EARGS", () => {
+    expect(JSON.parse(exec("trace", "--json").stdout).error.code).toBe("EARGS");
+    expect(JSON.parse(exec("trace", ENTRY, "--depth", "x", "--json").stdout).error.code).toBe("EARGS");
+  });
+});

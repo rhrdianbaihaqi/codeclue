@@ -14,10 +14,9 @@ import type {
 import { estimateTokens, savedPercent } from "../lib/count";
 import { applyEdits } from "../lib/edits";
 import type { Edit } from "../lib/edits";
-import { CliError } from "../lib/errors";
 import { assertSourceFile } from "../lib/files";
 import { declarationRange, pruneImportEdits } from "../lib/imports";
-import { createProject, findTsConfig } from "../lib/project";
+import { openProject } from "../lib/project";
 
 const BODY_PLACEHOLDER = "{ /* ... */ }";
 
@@ -125,28 +124,23 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
 
   assertSourceFile(filePath);
 
-  const tsConfigFilePath = findTsConfig(filePath);
-  if (tsConfigFilePath === undefined) {
-    warn(`Warning: no tsconfig.json found from ${filePath}; falling back to defaults.`);
-  }
-
   // Hanya file target yang ditambahkan. Tidak pernah ada .save() di sini —
   // seluruh manipulasi berhenti di memori, file di disk tidak disentuh.
-  let project;
-  try {
-    project = createProject(tsConfigFilePath);
-  } catch (err) {
-    // tsconfig rusak tidak boleh menggagalkan outline — alias tidak dipakai di sini.
-    if (!(err instanceof CliError) || err.code !== "ETSCONFIG") throw err;
-    warn(`Warning: ${err.message} (falling back to defaults)`);
-    project = createProject();
-  }
-  const sf = project.addSourceFileAtPath(filePath);
+  const project = openProject(filePath, warn);
+  return outlineSourceFile(project.addSourceFileAtPath(filePath), filePath, warn);
+}
+
+/** Inti outline untuk file yang sudah dimuat — dipakai bersama `trace` agar Project dibagi. */
+export function outlineSourceFile(
+  sf: SourceFile,
+  filePath: string,
+  warn: (message: string) => void,
+): OutlineResult {
   const original = sf.getFullText();
 
   // Outline dari kode yang gagal di-parse hanya tebakan. Tetap dihasilkan
   // (kalau ragu, pertahankan), tapi pembaca harus tahu.
-  const syntaxDiagnostics = project.getProgram().getSyntacticDiagnostics(sf);
+  const syntaxDiagnostics = sf.getProject().getProgram().getSyntacticDiagnostics(sf);
   if (syntaxDiagnostics.length > 0) {
     warn(`Warning: ${syntaxDiagnostics.length} syntax error(s) in ${filePath}; outline may be incomplete or wrong.`);
     for (const d of syntaxDiagnostics.slice(0, MAX_SYNTAX_MESSAGES)) {
