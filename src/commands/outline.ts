@@ -14,7 +14,10 @@ import type {
   SourceFile,
 } from "ts-morph";
 import { estimateTokens, savedPercent } from "../lib/count";
+import { applyEdits } from "../lib/edits";
+import type { Edit } from "../lib/edits";
 import { CliError } from "../lib/errors";
+import { declarationRange, pruneImportEdits } from "../lib/imports";
 import { createProject, findTsConfig } from "../lib/project";
 
 const BODY_PLACEHOLDER = "{ /* ... */ }";
@@ -37,13 +40,6 @@ export interface OutlineResult {
   savedPercent: number;
   /** Jumlah error sintaks pada file sumber; 0 berarti parse bersih. */
   syntaxErrors: number;
-}
-
-/** Satu penggantian teks pada rentang node tertentu. */
-interface Edit {
-  start: number;
-  width: number;
-  text: string;
 }
 
 type FunctionLike =
@@ -84,7 +80,13 @@ function trimJsDoc(doc: JSDoc): Edit | null {
   const summary =
     sentenceEnd === null ? description : description.slice(0, sentenceEnd.index + 1);
 
-  const trimmed = `/** ${summary} */`;
+  // @deprecated mengubah keputusan pembaca (jangan dipakai), jadi bertahan.
+  const deprecated = doc
+    .getTags()
+    .filter((tag) => tag.getTagName() === "deprecated")
+    .map((tag) => `@deprecated ${(tag.getCommentText() ?? "").replace(/\s+/g, " ").trim()}`.trim());
+
+  const trimmed = `/** ${[summary, ...deprecated].join(" ")} */`;
   if (doc.getText() === trimmed) return null;
 
   return { start: doc.getStart(), width: doc.getWidth(), text: trimmed };
@@ -173,15 +175,16 @@ export function outline(filePath: string, options: OutlineOptions = {}): Outline
     }
   }
 
-  // Edit di-splice langsung ke teks asli, dari belakang ke depan supaya
-  // posisi edit berikutnya tidak bergeser. Memanggil replaceWithText per edit
-  // membuat ts-morph mem-parse ulang seluruh file tiap kali (O(n^2)).
-  // Rentang edit tidak pernah bertumpuk: fungsi bersarang dilewati di collectEdits.
-  const edits = collectEdits(sf).sort((a, b) => b.start - a.start);
-  let result = original;
-  for (const edit of edits) {
-    result = result.slice(0, edit.start) + edit.text + result.slice(edit.start + edit.width);
-  }
+  const bodyEdits = collectEdits(sf);
+
+  // Pemakaian import dinilai dari outline tanpa deklarasi import itu sendiri.
+  const importRanges = sf
+    .getImportDeclarations()
+    .map((decl) => ({ ...declarationRange(decl, original), text: "" }));
+  const usageText = applyEdits(original, [...bodyEdits, ...importRanges]);
+  const isJsx = /\.[jt]sx$/i.test(filePath);
+
+  const result = applyEdits(original, [...bodyEdits, ...pruneImportEdits(sf, usageText, isJsx)]);
 
   const originalTokens = estimateTokens(original);
   const outlineTokens = estimateTokens(result);

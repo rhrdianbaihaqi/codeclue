@@ -73,8 +73,10 @@ Tidak ada linter. `prepublishOnly` menjalankan build + test.
 
 Baru `outline` (dan `version`) yang ada. `graph`, `trace`, `survey`, serta
 `lib/resolve.ts` di bawah masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
-dikerjakan satu sesi per deliverable). Fixture saat ini hanya
-`tests/fixtures/sample.ts`; daftar cakupan fixture di bagian Testing adalah target.
+dikerjakan satu sesi per deliverable). Fixture: `tests/fixtures/sample.ts` (outline)
+dan repo mini `tests/fixtures/mini/` (alias `@/`, circular import, `export *`,
+pruning import). Mini repo dikecualikan dari tsconfig root agar `tsc` utama tidak
+mengeluh soal alias; ia punya tsconfig sendiri.
 
 ## Arsitektur
 
@@ -96,8 +98,12 @@ dikerjakan satu sesi per deliverable). Fixture saat ini hanya
   tsconfig, tanpa lib files, tanpa dependency resolution); tsconfig dipakai
   hanya agar alias dan compilerOptions dikenali. Pemanggil menambah file sendiri.
 - `commands/outline.ts`: implementasinya mengumpulkan daftar edit (body blok ->
-  `{ /* ... */ }`, JSDoc dipangkas ke kalimat pertama), lalu menerapkannya dari
-  belakang ke depan agar posisi tidak bergeser. Arrow dengan body ekspresi
+  `{ /* ... */ }`, JSDoc dipangkas ke kalimat pertama + `@deprecated`), lalu
+  menerapkannya lewat `lib/edits.ts` (`applyEdits`, splice string dari belakang
+  ke depan; jangan kembali ke `replaceWithText` per edit — O(n²)). Import yang
+  bindingnya tak muncul di outline dibuang oleh `lib/imports.ts`; pemakaian dicari
+  lewat word-boundary termasuk di komentar/string (konservatif), import tanpa
+  binding dan `React` di file JSX selalu dipertahankan. Arrow dengan body ekspresi
   dibiarkan; fungsi bersarang dilewati (`traversal.skip()`). Tidak pernah
   memanggil `.save()` — `tests/safety.test.ts` menegakkan ini (hash file
   sebelum/sesudah dan pemindaian `src/` untuk pemanggilan tulis).
