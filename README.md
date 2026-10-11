@@ -23,7 +23,7 @@ implementation — it needs to know **what exists and what shape it has**.
 `codeclue` deletes the bodies and keeps the shape.
 
 ```bash
-npx codeclue@alpha outline src/context.ts
+npx github:rhrdianbaihaqi/codeclue outline src/context.ts
 ```
 
 ```
@@ -104,12 +104,14 @@ Losing something you needed is far worse than leaving a little noise.
 ## Install
 
 ```bash
-npx codeclue@alpha outline src/index.ts     # no install
-npm install -g codeclue@alpha               # or keep it around
+npx github:rhrdianbaihaqi/codeclue outline src/index.ts   # no install, builds from GitHub
+npm install -g github:rhrdianbaihaqi/codeclue             # or keep it around
 ```
 
 Requires **Node 18+**. The package is `codeclue`; the command is `clue`.
-Keep the `@alpha` tag — it pins you to the prerelease line.
+The first run clones and builds the repo (about 10-20 seconds); later runs are cached.
+The npm package `codeclue` currently only contains the first alpha (`version` command), so
+install from GitHub until a newer release is published to npm.
 
 ## Built for agents, not just humans
 

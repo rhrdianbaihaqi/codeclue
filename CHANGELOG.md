@@ -5,6 +5,9 @@ number only changes on breaking changes to the shape of `data`.
 
 ## [Unreleased]
 
+### Changed
+- `prepare` script builds `dist/` on install, so `npx github:rhrdianbaihaqi/codeclue <command>` works straight from GitHub. README and the skill use that command until the next npm release.
+
 ## [0.1.0-alpha.1] - 2026-10-11
 
 ### Added

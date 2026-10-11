@@ -32,10 +32,10 @@ Skip it when you are told the exact file and a small edit to make.
    `git ls-files | grep -i <keyword>` or a glob. Prefer the file that wires the feature
    together (route, handler, service, `index.ts`, `main.ts`) over a leaf utility.
    If the repo is large and you have no idea where to start, run
-   `npx codeclue@alpha survey` first to see the heaviest files and the directory shape.
+   `npx github:rhrdianbaihaqi/codeclue survey` first to see the heaviest files and the directory shape.
 2. **Run the trace with `--depth 1` first**, from the repo root, as a plain command
    (no shell variables or wrappers around it):
-   `npx codeclue@alpha trace <entry> --depth 1`
+   `npx github:rhrdianbaihaqi/codeclue trace <entry> --depth 1`
    Go to `--depth 2` only if the depth-1 map was small (the last line says
    `~X tokens`; under about 3000 is fine). A header like `[exports · outline saves 0% ...]` means a type-heavy
    file was reduced to its export names; run `clue outline <path>` only if you need it. If the tool says the output is
@@ -51,7 +51,7 @@ Skip it when you are told the exact file and a small edit to make.
 4. **Answer from the map where you can.** Name the files, the functions, and how they
    connect, using only what the map shows.
 5. **Go deeper only where needed.** For one specific file, in this order:
-   1. `npx codeclue@alpha outline <file>` (cheap skeleton; one or two files at a time,
+   1. `npx github:rhrdianbaihaqi/codeclue outline <file>` (cheap skeleton; one or two files at a time,
       not a loop over the whole directory),
    2. then, only if you must see the logic, read it in full (counts toward the limit of 3).
 6. **Different area?** Back to step 1 with a new entry. Never exceed the limit of 3
