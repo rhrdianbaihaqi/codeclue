@@ -37,8 +37,8 @@ Skip it when you are told the exact file and a small edit to make.
    (no shell variables or wrappers around it):
    `npx codeclue@alpha trace <entry> --depth 1`
    Go to `--depth 2` only if the depth-1 map was small (the last line says
-   `~X tokens`; under about 3000 is fine). A map can still be huge when a neighbour is
-   mostly type declarations (its outline barely shrinks). If the tool says the output is
+   `~X tokens`; under about 3000 is fine). A header like `[exports · outline saves 0% ...]` means a type-heavy
+   file was reduced to its export names; run `clue outline <path>` only if you need it. If the tool says the output is
    too large, never read all of it: rerun with a narrower entry, and outline only the
    files you need.
 3. **Read the map, top to bottom.** Layers are:

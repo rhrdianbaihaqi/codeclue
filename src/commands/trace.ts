@@ -18,6 +18,22 @@ const LADDER: readonly Layer[] = ["full", "outline", "exports", "path"];
 export const FAN_IN_PROMOTE = 3;
 export const DEFAULT_TRACE_DEPTH = 2;
 
+/**
+ * Outline yang nyaris tidak menghemat (file hampir murni deklarasi tipe) turun ke
+ * lapis `exports` bila file cukup besar. Ambang konservatif: file kecil tetap
+ * outline, dan penurunan selalu tercatat di `reasons`.
+ */
+export const OUTLINE_DEMOTE_MIN_TOKENS = 1500;
+export const OUTLINE_DEMOTE_BELOW_SAVED = 30;
+
+/** Apakah outline sebesar `outlineTokens` terlalu boros untuk file `originalTokens`? */
+export function shouldDemoteOutline(originalTokens: number, outlineTokens: number): boolean {
+  return (
+    originalTokens >= OUTLINE_DEMOTE_MIN_TOKENS &&
+    savedPercent(originalTokens, outlineTokens) < OUTLINE_DEMOTE_BELOW_SAVED
+  );
+}
+
 export interface TraceFile {
   path: string;
   depth: number;
@@ -181,6 +197,20 @@ export function trace(filePath: string, options: TraceOptions = {}): TraceResult
       if (layer === "outline") {
         // Pemangkasan import bisa menyisakan baris kosong di awal.
         file.content = outlineSourceFile(sf, node.path, warn).outline.replace(/^\s*\n/, "").trimEnd();
+        const outlineTokens = estimateTokens(file.content);
+        if (shouldDemoteOutline(originalTokens, outlineTokens)) {
+          const entries = listExports(sf);
+          const exportsText = formatExports(entries);
+          if (estimateTokens(exportsText) < outlineTokens) {
+            file.layer = "exports";
+            file.exports = entries;
+            file.content = exportsText;
+            file.reasons.push(
+              `outline saves ${savedPercent(originalTokens, outlineTokens)}% of ~${originalTokens} tokens, ` +
+                `exports only; see: clue outline ${node.path}`,
+            );
+          }
+        }
       } else {
         file.exports = listExports(sf);
         file.content = formatExports(file.exports);

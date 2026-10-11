@@ -124,7 +124,9 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   (murni, diuji terpisah) memetakan kedalaman ke lapis `full/outline/exports/path`,
   lalu menggeser: fan-in >= `FAN_IN_PROMOTE` naik satu lapis (tidak sampai full),
   test jadi path, `.d.ts`/generated turun satu lapis; entry tidak pernah bergeser.
-  Outline memakai `outlineSourceFile` dengan satu ts-morph `Project` bersama;
+  Outline yang nyaris tidak menghemat (`shouldDemoteOutline`: file >= 1500 token dan hemat < 30%,
+  mis. file murni tipe) turun ke `exports` dan alasannya dicatat di `reasons` — hanya bila daftar
+  export memang lebih kecil. Outline memakai `outlineSourceFile` dengan satu ts-morph `Project` bersama;
   daftar export murni sintaksis (`lib/exports.ts`). `totals.traceTokens` dihitung
   dari teks `formatTrace()` — teks itu sengaja tidak memuat angka totals.
   `vitest.config.ts` mengecualikan `tests/fixtures/**` (ada fixture bernama `*.test.ts`).

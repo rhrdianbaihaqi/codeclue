@@ -3,7 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { FAN_IN_PROMOTE, classify, formatTrace, isGeneratedFile, trace } from "../src/commands/trace";
+import {
+  FAN_IN_PROMOTE,
+  OUTLINE_DEMOTE_MIN_TOKENS,
+  classify,
+  formatTrace,
+  isGeneratedFile,
+  shouldDemoteOutline,
+  trace,
+} from "../src/commands/trace";
 import type { ClassifyInput, TraceResult } from "../src/commands/trace";
 import { formatExports, listExports } from "../src/lib/exports";
 import { createProject } from "../src/lib/project";
@@ -215,5 +223,66 @@ describe("trace: aset non-TS", () => {
     const app = r.files.find((f) => f.path === "App.svelte");
     expect(app).toMatchObject({ layer: "path", content: "" });
     expect(app?.reasons).toContain("not a TS/JS source");
+  });
+});
+
+describe("trace: outline yang nyaris tidak menghemat", () => {
+  const typeOnly = Array.from(
+    { length: 200 },
+    (_, i) => `export interface Shape${i} {\n  id: string;\n  value: number;\n  tags: string[];\n}\n`,
+  ).join("\n");
+  const logic = (n: number): string =>
+    Array.from({ length: n }, (_, i) => `export function f${i}(a: number): number {\n  const x = a * ${i};\n  return x + a - ${i};\n}\n`).join("\n");
+
+  it("shouldDemoteOutline: besar dan hemat <30% -> turun; kecil atau hemat banyak -> tetap", () => {
+    expect(shouldDemoteOutline(OUTLINE_DEMOTE_MIN_TOKENS, OUTLINE_DEMOTE_MIN_TOKENS)).toBe(true);
+    expect(shouldDemoteOutline(OUTLINE_DEMOTE_MIN_TOKENS - 1, OUTLINE_DEMOTE_MIN_TOKENS - 1)).toBe(false);
+    expect(shouldDemoteOutline(5000, 5000 * 0.71)).toBe(true);
+    expect(shouldDemoteOutline(5000, 5000 * 0.69)).toBe(false);
+    expect(shouldDemoteOutline(5000, 1000)).toBe(false);
+  });
+
+  it("tetangga murni tipe yang besar turun ke exports dengan alasan yang terlihat", () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "clue-trace-types-")));
+    writeFileSync(join(dir, "types.ts"), typeOnly);
+    writeFileSync(join(dir, "main.ts"), 'import type { Shape1 } from "./types";\nexport const x: Shape1 | undefined = undefined;\n');
+    const r = trace(join(dir, "main.ts"), { cwd: dir, warn: () => {} });
+    const types = r.files.find((f) => f.path === "types.ts")!;
+    expect(types.layer).toBe("exports");
+    expect(types.tokens).toBeLessThan(types.originalTokens / 2);
+    expect(types.reasons.join(" ")).toMatch(/outline saves \d+% of ~\d+ tokens, exports only; see: clue outline types\.ts/);
+    expect(types.exports?.length).toBe(200);
+    const text = formatTrace(r);
+    expect(text).toMatch(/### types\.ts \[exports · outline saves/);
+    expect(text).toContain("interface: Shape0, Shape1");
+  });
+
+  it("file besar yang punya body tetap outline (outline menghemat banyak)", () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "clue-trace-logic-")));
+    writeFileSync(join(dir, "logic.ts"), logic(150));
+    writeFileSync(join(dir, "main.ts"), 'import { f1 } from "./logic";\nexport const x = f1(1);\n');
+    const logicFile = trace(join(dir, "main.ts"), { cwd: dir, warn: () => {} }).files.find((f) => f.path === "logic.ts")!;
+    expect(logicFile.originalTokens).toBeGreaterThanOrEqual(OUTLINE_DEMOTE_MIN_TOKENS);
+    expect(logicFile.layer).toBe("outline");
+    expect(logicFile.reasons).toEqual([]);
+  });
+
+  it("file tipe yang kecil tetap outline (kalau ragu, pertahankan)", () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "clue-trace-small-")));
+    writeFileSync(join(dir, "types.ts"), "export interface A {\n  id: string;\n}\n");
+    writeFileSync(join(dir, "main.ts"), 'import type { A } from "./types";\nexport const a: A | undefined = undefined;\n');
+    const r = trace(join(dir, "main.ts"), { cwd: dir, warn: () => {} });
+    expect(r.files.find((f) => f.path === "types.ts")?.layer).toBe("outline");
+  });
+
+  it("totals memakai teks hasil demosi; JSON tetap berbentuk sama", () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "clue-trace-totals-")));
+    writeFileSync(join(dir, "types.ts"), typeOnly);
+    writeFileSync(join(dir, "main.ts"), 'import type { Shape1 } from "./types";\nexport const x: Shape1 | undefined = undefined;\n');
+    const r = trace(join(dir, "main.ts"), { cwd: dir, warn: () => {} });
+    expect(r.totals.traceTokens).toBeLessThan(r.totals.fullTokens / 2);
+    expect(Object.keys(r.files[0]!).sort()).toEqual(
+      ["content", "depth", "fanIn", "layer", "originalTokens", "path", "reasons", "tokens"].sort(),
+    );
   });
 });
