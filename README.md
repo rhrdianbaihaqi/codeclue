@@ -113,6 +113,15 @@ The first run clones and builds the repo (about 10-20 seconds); later runs are c
 The npm package `codeclue` currently only contains the first alpha (`version` command), so
 install from GitHub until a newer release is published to npm.
 
+## Use it as a Claude Code skill
+
+The repo ships a skill that makes the agent run `clue trace` before it opens any file:
+
+```
+/plugin marketplace add rhrdianbaihaqi/codeclue
+/plugin install codeclue@codeclue
+```
+
 ## Built for agents, not just humans
 
 Every command speaks JSON:

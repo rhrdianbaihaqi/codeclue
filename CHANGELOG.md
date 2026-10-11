@@ -5,6 +5,9 @@ number only changes on breaking changes to the shape of `data`.
 
 ## [Unreleased]
 
+### Added
+- `.claude-plugin/marketplace.json`: install the `codeclue-explore` skill with `/plugin marketplace add rhrdianbaihaqi/codeclue`.
+
 ### Changed
 - `prepare` script builds `dist/` on install, so `npx github:rhrdianbaihaqi/codeclue <command>` works straight from GitHub. README and the skill use that command until the next npm release.
 

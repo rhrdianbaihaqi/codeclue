@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "codeclue",
+  "description": "Skills that help AI agents explore TypeScript codebases with minimal tokens",
+  "owner": {
+    "name": "rhrdianbaihaqi"
+  },
+  "plugins": [
+    {
+      "name": "codeclue",
+      "description": "Explore an unfamiliar TypeScript/JavaScript codebase with minimal tokens by running `clue trace` before opening any file.",
+      "version": "0.1.0-alpha.1",
+      "author": { "name": "rhrdianbaihaqi" },
+      "source": "./",
+      "homepage": "https://github.com/rhrdianbaihaqi/codeclue",
+      "license": "MIT",
+      "keywords": ["typescript", "codebase", "tokens", "exploration"],
+      "category": "development",
+      "skills": ["./skills/codeclue-explore"]
+    }
+  ]
+}
