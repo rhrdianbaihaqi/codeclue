@@ -120,7 +120,8 @@ Size of the `trace` output vs. reading every file in the map in full
 | zod | `packages/zod/src/v4/classic/schemas.ts` | 2 | 24 | ~174,066 | ~74,899 | 57% |
 
 The weak row is honest: zod's entry is a 25k-token file shown in full, and its
-core files are type-heavy, so depth 2 saves less. Start with `--depth 1` there.
+core files are type-heavy, so depth 2 saves less. Start with `--depth 1` there;
+`--outline-entry` shows the entry as a skeleton too (zod: 76% → 81% at depth 1, 57% → 62% at depth 2).
 
 ## Install
 
@@ -212,7 +213,7 @@ Alpha. All four MVP commands work. The JSON shape may still shift before
 | --- | --- |
 | `clue outline <file>` | One file's skeleton: signatures, types, exports |
 | `clue graph <file> --depth N` | Walk the import graph, never entering `node_modules` |
-| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists |
+| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists (`--outline-entry`: entry as a skeleton too) |
 | `clue survey [dir]` | Token profile of a repo: heaviest files, suggested ignore list |
 | `clue version` | Version + contract |
 

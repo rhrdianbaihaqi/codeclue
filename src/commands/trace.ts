@@ -70,6 +70,8 @@ export interface TraceResult {
 
 export interface TraceOptions {
   depth?: number;
+  /** Tampilkan entry sebagai outline, bukan isi utuh. */
+  outlineEntry?: boolean;
   cwd?: string;
   warn?: (message: string) => void;
 }
@@ -79,6 +81,8 @@ export interface ClassifyInput {
   maxDepth: number;
   fanIn: number;
   isEntry: boolean;
+  /** Entry dikecualikan dari lapis `full` (hanya berlaku bila `isEntry`). */
+  outlineEntry?: boolean;
   isTest: boolean;
   isDeclaration: boolean;
   isGenerated: boolean;
@@ -102,7 +106,7 @@ export const isGeneratedFile = (path: string, text: string): boolean =>
  * Entry tidak pernah bergeser.
  */
 export function classify(input: ClassifyInput): { layer: Layer; reasons: string[] } {
-  if (input.isEntry) return { layer: "full", reasons: [] };
+  if (input.isEntry) return { layer: input.outlineEntry === true ? "outline" : "full", reasons: [] };
 
   const reasons: string[] = [];
   let index = input.depth > input.maxDepth ? 3 : Math.min(input.depth, 3);
@@ -172,6 +176,7 @@ export function trace(filePath: string, options: TraceOptions = {}): TraceResult
       maxDepth,
       fanIn: node.importedBy.length,
       isEntry,
+      outlineEntry: options.outlineEntry === true,
       isTest: isTestFile(node.path),
       isDeclaration: isDeclarationFile(node.path),
       isGenerated: isGeneratedFile(node.path, text),
@@ -198,7 +203,7 @@ export function trace(filePath: string, options: TraceOptions = {}): TraceResult
         // Pemangkasan import bisa menyisakan baris kosong di awal.
         file.content = outlineSourceFile(sf, node.path, warn).outline.replace(/^\s*\n/, "").trimEnd();
         const outlineTokens = estimateTokens(file.content);
-        if (shouldDemoteOutline(originalTokens, outlineTokens)) {
+        if (!isEntry && shouldDemoteOutline(originalTokens, outlineTokens)) {
           const entries = listExports(sf);
           const exportsText = formatExports(entries);
           if (estimateTokens(exportsText) < outlineTokens) {
@@ -243,7 +248,7 @@ export function formatTrace(result: TraceResult): string {
 
   for (const f of result.files) {
     if (f.layer === "path") continue;
-    const tags = [f.depth === 0 ? "entry · full" : f.layer, ...f.reasons].join(" · ");
+    const tags = [f.depth === 0 ? `entry · ${f.layer}` : f.layer, ...f.reasons].join(" · ");
     out.push("", `### ${f.path} [${tags}]`);
     if (f.content !== "") out.push(f.content);
   }

@@ -123,7 +123,7 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   `--depth` tampil sebagai path agar pembaca tahu ada yang di luar batas. `classify()`
   (murni, diuji terpisah) memetakan kedalaman ke lapis `full/outline/exports/path`,
   lalu menggeser: fan-in >= `FAN_IN_PROMOTE` naik satu lapis (tidak sampai full),
-  test jadi path, `.d.ts`/generated turun satu lapis; entry tidak pernah bergeser.
+  test jadi path, `.d.ts`/generated turun satu lapis; entry tidak pernah bergeser (kecuali `--outline-entry`: entry jadi `outline`, tanpa demosi).
   Outline yang nyaris tidak menghemat (`shouldDemoteOutline`: file >= 1500 token dan hemat < 30%,
   mis. file murni tipe) turun ke `exports` dan alasannya dicatat di `reasons` — hanya bila daftar
   export memang lebih kecil. Outline memakai `outlineSourceFile` dengan satu ts-morph `Project` bersama;

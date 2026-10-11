@@ -175,6 +175,14 @@ describe("run: trace", () => {
     expect(stderr).toMatch(/files: ~\d+ tokens vs ~\d+ if read in full/);
   });
 
+  it("--outline-entry: entry jadi outline, flag boolean tidak menelan argumen", () => {
+    const { code, stdout, stderr } = exec("trace", "--outline-entry", ENTRY);
+    expect(code).toBe(0);
+    expect(stdout).toMatch(/### \S*main\.ts \[entry · outline\]/);
+    expect(stderr).not.toMatch(/unknown option/);
+    expect(JSON.parse(exec("trace", ENTRY, "--outline-entry", "--json").stdout).data.files[0].layer).toBe("outline");
+  });
+
   it("argumen salah: EARGS", () => {
     expect(JSON.parse(exec("trace", "--json").stdout).error.code).toBe("EARGS");
     expect(JSON.parse(exec("trace", ENTRY, "--depth", "x", "--json").stdout).error.code).toBe("EARGS");

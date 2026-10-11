@@ -76,6 +76,33 @@ describe("classify", () => {
   });
 });
 
+describe("trace --outline-entry", () => {
+  const entry = join(MINI, "src/main.ts");
+  const normal = trace(entry, { ...quiet, depth: 1 });
+  const outlined = trace(entry, { ...quiet, depth: 1, outlineEntry: true });
+
+  it("classify: entry jadi outline hanya bila diminta; non-entry tidak terpengaruh", () => {
+    const base: ClassifyInput = {
+      depth: 0, maxDepth: 2, fanIn: 0, isEntry: true, isTest: false, isDeclaration: false, isGenerated: false, parsable: true,
+    };
+    expect(classify(base).layer).toBe("full");
+    expect(classify({ ...base, outlineEntry: true }).layer).toBe("outline");
+    expect(classify({ ...base, isEntry: false, depth: 1, outlineEntry: true }).layer).toBe("outline");
+  });
+
+  it("entry tampil sebagai outline dan lapis lain tidak berubah", () => {
+    expect(layerOf(outlined, "src/main.ts")).toBe("outline");
+    expect(formatTrace(outlined)).toContain("### src/main.ts [entry · outline]");
+    const others = (r: TraceResult) => r.files.filter((f) => f.depth > 0).map((f) => [f.path, f.layer]);
+    expect(others(outlined)).toEqual(others(normal));
+  });
+
+  it("outline entry tidak lebih besar dari entry utuh", () => {
+    const tokens = (r: TraceResult) => r.files.find((f) => f.depth === 0)!.tokens;
+    expect(tokens(outlined)).toBeLessThanOrEqual(tokens(normal));
+  });
+});
+
 describe("trace: fixture mini", () => {
   const r = trace(join(MINI, "src/main.ts"), { ...quiet, depth: 2 });
 

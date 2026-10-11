@@ -14,7 +14,7 @@ import { VERSION } from "./version";
  * flag bernilai (`--depth 2` atau `--depth=2`) supaya `clue outline --json
  * file.ts` tidak salah menelan `file.ts` sebagai nilai `--json`.
  */
-const BOOLEAN_FLAGS = new Set(["json", "help", "version"]);
+const BOOLEAN_FLAGS = new Set(["json", "help", "version", "outline-entry"]);
 
 const ALIASES: Record<string, string> = {
   h: "help",
@@ -87,6 +87,7 @@ Commands
   outline <file>       One file's skeleton: signatures, types, exports
   graph <file>         Import graph from a file (--depth N, default 2)
   trace <entry>        Layered map: entry in full, depth 1 outlines, depth 2 exports
+                       (--outline-entry: entry as outline too)
   survey [dir]         Token profile of a repo: top 20 files, total, ignore suggestions
   version              Print the version and contract number
 
@@ -129,11 +130,14 @@ const COMMAND_DOCS: Record<string, CommandDoc> = {
     args: 1,
   },
   trace: {
-    usage: "clue trace <entry> [--depth N] [--json]",
+    usage: "clue trace <entry> [--depth N] [--outline-entry] [--json]",
     summary: "Layered map of a subsystem: entry in full, depth 1 as outlines, depth 2 as export lists, beyond as paths.",
-    options: ["--depth N    how far to follow imports (default 2)"],
-    examples: ["clue trace src/run.ts", "clue trace src/run.ts --depth 1 | pbcopy"],
-    flags: ["depth"],
+    options: [
+      "--depth N         how far to follow imports (default 2)",
+      "--outline-entry   show the entry as an outline instead of in full (for big entry files)",
+    ],
+    examples: ["clue trace src/run.ts", "clue trace src/run.ts --depth 1 | pbcopy", "clue trace src/big.ts --outline-entry"],
+    flags: ["depth", "outline-entry"],
     args: 1,
   },
   survey: {
@@ -241,7 +245,7 @@ const COMMANDS: Record<string, Handler> = {
       throw new CliError("EARGS", "Missing required argument <entry>. Example: clue trace src/run.ts --depth 2");
     }
     const depth = parseDepth(parsed, DEFAULT_TRACE_DEPTH);
-    const result = trace(file, { depth, warn: (message) => io.stderr(`${message}\n`) });
+    const result = trace(file, { depth, outlineEntry: parsed.flags["outline-entry"] === true, warn: (message) => io.stderr(`${message}\n`) });
     const t = result.totals;
     return {
       data: result,

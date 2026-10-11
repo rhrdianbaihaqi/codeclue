@@ -6,6 +6,7 @@ number only changes on breaking changes to the shape of `data`.
 ## [Unreleased]
 
 ### Added
+- `clue trace --outline-entry`: show the entry file as an outline instead of in full, for big entry files.
 - `.claude-plugin/marketplace.json`: install the `codeclue-explore` skill with `/plugin marketplace add rhrdianbaihaqi/codeclue`.
 
 ### Changed

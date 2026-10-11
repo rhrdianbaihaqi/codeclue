@@ -36,6 +36,7 @@ Skip it when you are told the exact file and a small edit to make.
 2. **Run the trace with `--depth 1` first**, from the repo root, as a plain command
    (no shell variables or wrappers around it):
    `npx github:rhrdianbaihaqi/codeclue trace <entry> --depth 1`
+   If the entry file is huge (the map's first section is thousands of tokens), add `--outline-entry` to see it as a skeleton.
    Go to `--depth 2` only if the depth-1 map was small (the last line says
    `~X tokens`; under about 3000 is fine). A header like `[exports · outline saves 0% ...]` means a type-heavy
    file was reduced to its export names; run `clue outline <path>` only if you need it. If the tool says the output is
