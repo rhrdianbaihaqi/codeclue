@@ -33,10 +33,13 @@ Skip it when you are told the exact file and a small edit to make.
    together (route, handler, service, `index.ts`, `main.ts`) over a leaf utility.
    If the repo is large and you have no idea where to start, run
    `npx codeclue@alpha survey` first to see the heaviest files and the directory shape.
-2. **Run the trace** from the repo root:
-   `npx codeclue@alpha trace <entry> --depth 2`
-   If the output is too large, rerun with `--depth 1`. If you are unsure the entry is
-   right, run `--depth 1` first; it is cheap.
+2. **Run the trace with `--depth 1` first**, from the repo root, as a plain command
+   (no shell variables or wrappers around it):
+   `npx codeclue@alpha trace <entry> --depth 1`
+   Depth 2 on a well-connected entry can print 100KB+ and cost more than it saves.
+   Go to `--depth 2` only if the depth-1 map was small (the last line says
+   `~X tokens`; under about 3000 is fine). If any output is huge, never read all of it:
+   rerun at a lower depth or pick a narrower entry.
 3. **Read the map, top to bottom.** Layers are:
    - `[entry · full]`: the entry's whole source.
    - `[outline]`: signatures and types, bodies removed (`/* ... */`).
@@ -47,7 +50,8 @@ Skip it when you are told the exact file and a small edit to make.
 4. **Answer from the map where you can.** Name the files, the functions, and how they
    connect, using only what the map shows.
 5. **Go deeper only where needed.** For one specific file, in this order:
-   1. `npx codeclue@alpha outline <file>` (cheap skeleton),
+   1. `npx codeclue@alpha outline <file>` (cheap skeleton; one or two files at a time,
+      not a loop over the whole directory),
    2. then, only if you must see the logic, read it in full (counts toward the limit of 3).
 6. **Different area?** Back to step 1 with a new entry. Never exceed the limit of 3
    full reads; if you are at 3, trace again or tell the user what you could not verify.
