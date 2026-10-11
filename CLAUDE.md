@@ -71,9 +71,9 @@ Tidak ada linter. `prepublishOnly` menjalankan build + test.
 
 ## Status implementasi
 
-`outline`, `graph`, `trace`, dan `version` sudah ada. Hanya `survey` yang masih rencana (lihat SPEC.md / BUILD-PLAN.md, yang
-dikerjakan satu sesi per deliverable). Fixture: `tests/fixtures/sample.ts` (outline)
-dan repo mini `tests/fixtures/mini/` (alias `@/`, circular import, `export *`,
+`outline`, `graph`, `trace`, `survey`, dan `version` sudah ada (lihat SPEC.md / BUILD-PLAN.md, yang
+dikerjakan satu sesi per deliverable). Fixture: `tests/fixtures/sample.ts` (outline),
+`tests/fixtures/survey/` (survey), dan repo mini `tests/fixtures/mini/` (alias `@/`, circular import, `export *`,
 pruning import). Mini repo dikecualikan dari tsconfig root agar `tsc` utama tidak
 mengeluh soal alias; ia punya tsconfig sendiri.
 
@@ -125,6 +125,14 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   daftar export murni sintaksis (`lib/exports.ts`). `totals.traceTokens` dihitung
   dari teks `formatTrace()` — teks itu sengaja tidak memuat angka totals.
   `vitest.config.ts` mengecualikan `tests/fixtures/**` (ada fixture bernama `*.test.ts`).
+- `commands/survey.ts` + `lib/gitignore.ts`: daftar file diambil dari `git ls-files
+  --cached --others --exclude-standard` (hormati semua aturan ignore); kalau bukan repo
+  git / git tidak ada, jatuh ke pindaian sendiri dengan pencocok `.gitignore` minimal
+  (bersarang, negasi, `**`). `node_modules` dan `.git` selalu dilewati. File biner
+  (byte NUL) dihitung di `binarySkipped`, tidak masuk token. Saran ignore hanya untuk
+  file yang MASIH terpindai (belum di-ignore): `suggestIgnore()` memetakan lockfile,
+  `dist/`, `coverage/`, snapshot, `*.min.*`, `*.map`, generated. `build/` dan `*.d.ts`
+  sengaja tidak disarankan (kalau ragu, pertahankan). Top-N tetap 20 (`TOP_N`).
 - Import antar file di `src/` ditulis tanpa ekstensi (`"./commands/outline"`);
   tsup yang melakukan bundling.
 

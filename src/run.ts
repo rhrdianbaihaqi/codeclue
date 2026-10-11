@@ -1,5 +1,6 @@
 import { DEFAULT_DEPTH, formatGraph, graph } from "./commands/graph";
 import { outline } from "./commands/outline";
+import { formatSurvey, survey } from "./commands/survey";
 import { DEFAULT_TRACE_DEPTH, formatTrace, trace } from "./commands/trace";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
@@ -84,6 +85,7 @@ Commands
   outline <file>       One file's skeleton: signatures, types, exports
   graph <file>         Import graph from a file (--depth N, default 2)
   trace <entry>        Layered map: entry in full, depth 1 outlines, depth 2 exports
+  survey [dir]         Token profile of a repo: top 20 files, total, ignore suggestions
   version              Print the version and contract number
 
 Options
@@ -160,6 +162,16 @@ const COMMANDS: Record<string, Handler> = {
       data: result,
       human: formatTrace(result),
       note: `${t.files} files: ~${t.traceTokens} tokens vs ~${t.fullTokens} if read in full (${t.savedPercent}% saved)`,
+    };
+  },
+
+  survey: (parsed, io) => {
+    const result = survey(parsed.positionals[0], { warn: (message) => io.stderr(`${message}\n`) });
+    const sg = result.suggestedSavings;
+    return {
+      data: result,
+      human: formatSurvey(result),
+      note: `${result.totals.files} files, ~${result.totals.tokens} tokens; ignore suggestions could drop ~${sg.tokens} (${sg.percent}%)`,
     };
   },
 
