@@ -1,5 +1,5 @@
 import { realpathSync, statSync } from "node:fs";
-import { dirname, extname, resolve as resolvePath } from "node:path";
+import { dirname, extname, normalize, resolve as resolvePath } from "node:path";
 import { ts } from "ts-morph";
 import { isSupportedSource } from "./files";
 
@@ -78,13 +78,15 @@ export function createResolver(options: ts.CompilerOptions, cwd: string): Resolv
         if (resolvedModule.isExternalLibraryImport === true || path.split(/[\\/]/).includes("node_modules")) {
           return { kind: "external", name: packageName(specifier) };
         }
-        return { kind: "file", path };
+        // TS memakai "/" di semua platform; samakan dengan path asli OS supaya file yang
+        // sama tidak tercatat dua kali sebagai node (entry memakai "\\" di Windows).
+        return { kind: "file", path: normalize(path) };
       }
 
       // Tidak ketemu: relatif atau cocok alias = import rusak; sisanya dianggap
       // paket yang tidak terpasang (tetap dicatat sebagai eksternal).
       const asset = resolveAsset(specifier, fromFile);
-      if (asset !== undefined) return { kind: "file", path: asset };
+      if (asset !== undefined) return { kind: "file", path: normalize(asset) };
       if (isRelative(specifier) || matchesPathAlias(specifier, options.paths)) return { kind: "unresolved" };
       return { kind: "external", name: packageName(specifier) };
     },
