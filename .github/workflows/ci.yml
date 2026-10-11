@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Smoke test built CLI
+        run: node dist/cli.js survey . --json
+
+  # Dev tooling (vitest) needs a newer Node than the package supports at runtime.
+  # Build once, then prove the shipped bundle runs on the oldest supported Node.
+  runtime:
+    name: runtime (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        node: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node dist/cli.js outline src/run.ts --json
+      - run: node dist/cli.js trace src/run.ts --depth 1 --json
+      - run: node dist/cli.js survey . --json

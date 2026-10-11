@@ -6,7 +6,8 @@
 It only needed 1,300.**
 
 [![npm](https://img.shields.io/npm/v/codeclue/alpha?label=npm%40alpha&color=cb3837)](https://www.npmjs.com/package/codeclue)
-[![status](https://img.shields.io/badge/status-alpha-orange)](#status)
+[![CI](https://github.com/rhrdianbaihaqi/codeclue/actions/workflows/ci.yml/badge.svg)](https://github.com/rhrdianbaihaqi/codeclue/actions/workflows/ci.yml)
+[![status](https://img.shields.io/badge/status-alpha-orange)](#commands)
 [![node](https://img.shields.io/badge/node-%E2%89%A518-5fa04e)](#install)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-1-informational)](#why-its-small)
 [![license](https://img.shields.io/npm/l/codeclue?color=blue)](LICENSE)
@@ -144,8 +145,10 @@ Errors use the same envelope — `ok: false`, `data: null`, and a machine code:
 | Code | Meaning |
 | --- | --- |
 | `EARGS` | Required argument missing |
-| `ENOENT` | File does not exist |
-| `EISDIR` | Path is a directory |
+| `ENOENT` | File or directory does not exist |
+| `EISDIR` | Path is a directory, not a file |
+| `ENOTDIR` | `survey` was given a file, not a directory |
+| `EUNSUPPORTED` | Not a TS/JS source file |
 | `UNKNOWN_COMMAND` | No such command |
 | `NO_COMMAND` | `--json` with no command |
 | `INTERNAL_ERROR` | Anything unexpected |
@@ -168,23 +171,61 @@ file next to yours. The test suite hashes every fixture before and after each
 run and **fails if one byte changes** — plus a static check that no write path
 exists anywhere in `src/`.
 
-## Status
+## Commands
 
-Alpha. Three commands work today, and the roadmap is deliberate rather than long:
+Alpha. All four MVP commands work. The JSON shape may still shift before
+`0.1.0` — that is what the `contract` field is for.
 
-| Command | What it does | |
-| --- | --- | --- |
-| `clue outline <file>` | One file's skeleton | ✅ |
-| `clue version` | Version + contract | ✅ |
-| `clue graph <file> --depth N` | Walk the import graph, never entering `node_modules` | ✅ |
-| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists | ✅ |
-| `clue survey [dir]` | Token profile of a repo: heaviest files, suggested ignore list | 🚧 |
-
-🚧 commands print `Unknown command` and exit `1`. The JSON shape may still shift
-before `0.1.0` — that is what the `contract` field is for.
+| Command | What it does |
+| --- | --- |
+| `clue outline <file>` | One file's skeleton: signatures, types, exports |
+| `clue graph <file> --depth N` | Walk the import graph, never entering `node_modules` |
+| `clue trace <entry> --depth 2` | Layered map: entry in full, depth 1 as skeletons, depth 2 as export lists |
+| `clue survey [dir]` | Token profile of a repo: heaviest files, suggested ignore list |
+| `clue version` | Version + contract |
 
 `trace` is the one this is all building toward: one command that hands an agent
 a whole subsystem at the right level of detail.
+
+```
+$ clue trace src/index.ts --depth 2
+
+### src/index.ts [entry · full]
+export * from "./a";
+export * from "./b";
+
+### src/a.ts [outline]
+import { b } from "./b";
+export function a(user: User, next: typeof b = b): string { /* ... */ }
+
+### src/types.ts [exports]
+interface: User
+type: Id
+
+### cycles
+src/a.ts <-> src/b.ts
+```
+
+`survey` tells you what is eating your context before you start, and respects
+`.gitignore` (it uses `git ls-files` when it can, and its own matcher otherwise):
+
+```
+$ clue survey .
+
+.: 4 files, ~1636 tokens
+
+Top 4 files by tokens
+tokens    %  path
+  ~883  54%  package-lock.json
+  ~679  42%  src/big.ts
+   ~68   4%  __snapshots__/a.test.ts.snap
+    ~6   0%  src/small.ts
+
+Suggested ignores (would drop ~951 tokens, 58%)
+pattern            files  tokens    %  reason
+package-lock.json      1    ~883  54%  lockfile
+__snapshots__/         1     ~68   4%  test snapshots
+```
 
 ## tsconfig, handled
 
@@ -216,3 +257,5 @@ mechanical step moved out of the model is a token spent on actual thinking.
 ## License
 
 MIT © 2026 rahardianz
+
+Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
