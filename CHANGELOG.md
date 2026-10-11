@@ -5,9 +5,14 @@ number only changes on breaking changes to the shape of `data`.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.1] - 2026-10-11
+
 ### Added
 - `clue survey [dir]`: token profile of a repo (top 20 files, total, ignore suggestions); respects `.gitignore`.
 - CI workflow (typecheck, tests, build on Linux/macOS/Windows; runtime smoke test on Node 18/20).
+
+### Fixed
+- Windows: the same file could be listed twice in `graph`/`trace` (resolver paths used `/`, the entry used `\`).
 
 ### Changed
 - `trace`: a neighbour at the outline layer whose outline saves <30% and whose file is >=1500 tokens (almost pure type declarations) is shown as `exports`, with the reason in its header and a pointer to `clue outline <path>`. On hono `src/hono-base.ts --depth 2`: ~33.7k -> ~9.7k tokens (79% saved vs 28%). JSON shape unchanged. Fixes #10.

@@ -1,6 +1,6 @@
 {
   "name": "codeclue",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "TypeScript outlines for AI coding agents — signatures without bodies, a fraction of the tokens",
   "scripts": {
     "test": "vitest run",
