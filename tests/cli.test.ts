@@ -180,3 +180,66 @@ describe("run: trace", () => {
     expect(JSON.parse(exec("trace", ENTRY, "--depth", "x", "--json").stdout).error.code).toBe("EARGS");
   });
 });
+
+describe("run: bantuan per command", () => {
+  it.each(["outline", "graph", "trace", "survey", "version"])("%s --help mencetak usage command itu", (name) => {
+    const { code, stdout, stderr } = exec(name, "--help");
+    expect(code).toBe(0);
+    expect(stdout).toMatch(new RegExp(`^clue ${name}`));
+    expect(stdout).toMatch(/Examples/);
+    expect(stdout).not.toMatch(/Commands\n/);
+    expect(stderr).toBe("");
+  });
+
+  it("-h dan flag sebelum command sama saja; --depth hanya tampil di graph/trace", () => {
+    expect(exec("trace", "-h").stdout).toMatch(/--depth N/);
+    expect(exec("graph", "--help").stdout).toMatch(/--depth N/);
+    expect(exec("outline", "--help").stdout).not.toMatch(/--depth/);
+  });
+
+  it("--help global menyebut bantuan per command", () => {
+    expect(exec("--help").stdout).toMatch(/clue <command> --help/);
+  });
+});
+
+describe("run: input yang salah", () => {
+  it("salah ketik command: saran 'Did you mean'", () => {
+    const text = exec("trce", "x");
+    expect(text.code).toBe(1);
+    expect(text.stdout).toBe("");
+    expect(text.stderr).toMatch(/Did you mean "trace"\?/);
+    const json = JSON.parse(exec("surevy", "--json").stdout);
+    expect(json.error.code).toBe("UNKNOWN_COMMAND");
+    expect(json.error.message).toMatch(/Did you mean "survey"\?/);
+  });
+
+  it("command yang sama sekali tidak mirip: tanpa saran, tetap daftar command", () => {
+    const { stderr } = exec("zzzzzzzz");
+    expect(stderr).not.toMatch(/Did you mean/);
+    expect(stderr).toMatch(/Available: .*outline/);
+  });
+
+  it("flag tak dikenal dan argumen berlebih: peringatan ke stderr, perintah tetap jalan", () => {
+    const { code, stdout, stderr } = exec("outline", FIXTURE, "extra.ts", "--bogus");
+    expect(code).toBe(0);
+    expect(stdout).toContain("export async function fetchUser");
+    expect(stderr).toMatch(/unknown option --bogus for "clue outline"/);
+    expect(stderr).toMatch(/ignoring extra argument: extra\.ts/);
+  });
+
+  it("--json: peringatan tidak mengotori stdout", () => {
+    const { stdout } = exec("outline", FIXTURE, "--bogus", "--json");
+    expect(JSON.parse(stdout).ok).toBe(true);
+  });
+
+  it("flag yang valid tidak memicu peringatan", () => {
+    expect(exec("trace", FIXTURE, "--depth", "1", "--json").stderr).toBe("");
+  });
+
+  it("path relatif yang tidak ada: pesan menyebut cwd; direktori diberi petunjuk", () => {
+    expect(exec("outline", "tidak/ada.ts").stderr).toMatch(/File not found: tidak\/ada\.ts \(looked in .+\)/);
+    const dir = exec("outline", "src");
+    expect(dir.stderr).toMatch(/is a directory, not a file\. Pass an entry file/);
+    expect(dir.stderr).toMatch(/clue survey src/);
+  });
+});

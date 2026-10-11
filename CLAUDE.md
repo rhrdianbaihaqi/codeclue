@@ -87,6 +87,9 @@ mengeluh soal alias; ia punya tsconfig sendiri.
   ke stdout, `note` (ringkasan token) ke stderr dan disembunyikan saat `--json`.
   Error dilempar sebagai `CliError(code, message)` (`lib/errors.ts`) dan
   dikonversi menjadi `fail()` envelope di `run()`.
+- `COMMAND_DOCS` (`run.ts`) memuat usage/contoh/flag yang dikenal tiap command: dari sana `clue <cmd> --help`
+  dan peringatan flag tak dikenal/argumen berlebih (stderr, tidak menggagalkan). Command atau flag baru
+  WAJIB didaftar di situ juga. Saran salah ketik memakai `lib/suggest.ts`.
 - `parseArgv`: flag boolean didaftar di `BOOLEAN_FLAGS`; flag lain dianggap
   bernilai. Flag boolean baru WAJIB ditambahkan ke set itu, kalau tidak ia
   menelan argumen posisional berikutnya.

@@ -1,5 +1,5 @@
 import { statSync } from "node:fs";
-import { extname } from "node:path";
+import { extname, isAbsolute } from "node:path";
 import { CliError } from "./errors";
 
 export const SUPPORTED_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
@@ -14,10 +14,15 @@ export function assertSourceFile(filePath: string): void {
   try {
     stat = statSync(filePath);
   } catch {
-    throw new CliError("ENOENT", `File not found: ${filePath}`);
+    const where = isAbsolute(filePath) ? "" : ` (looked in ${process.cwd()})`;
+    throw new CliError("ENOENT", `File not found: ${filePath}${where}`);
   }
   if (stat.isDirectory()) {
-    throw new CliError("EISDIR", `${filePath} is a directory, not a file`);
+    throw new CliError(
+      "EISDIR",
+      `${filePath} is a directory, not a file. Pass an entry file (e.g. ${filePath}/index.ts), ` +
+        `or run "clue survey ${filePath}" to profile the directory.`,
+    );
   }
 
   const ext = extname(filePath).toLowerCase();

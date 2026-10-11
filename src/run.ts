@@ -5,6 +5,7 @@ import { DEFAULT_TRACE_DEPTH, formatTrace, trace } from "./commands/trace";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
 import { CliError } from "./lib/errors";
+import { closestMatch } from "./lib/suggest";
 import { VERSION } from "./version";
 
 /**
@@ -95,7 +96,90 @@ Options
   --version, -v        Print the version
 
 Every command supports --json. Results go to stdout, progress to stderr.
+Per-command help: clue <command> --help
 `;
+
+interface CommandDoc {
+  usage: string;
+  summary: string;
+  options: string[];
+  examples: string[];
+  /** Flag bernilai yang dikenali selain --json/--help/--version. */
+  flags: string[];
+  /** Jumlah argumen posisional yang dipakai. */
+  args: number;
+}
+
+const COMMAND_DOCS: Record<string, CommandDoc> = {
+  outline: {
+    usage: "clue outline <file> [--json]",
+    summary: "Print one file's skeleton: signatures, types and exports without function bodies.",
+    options: [],
+    examples: ["clue outline src/run.ts", "clue outline src/run.ts --json"],
+    flags: [],
+    args: 1,
+  },
+  graph: {
+    usage: "clue graph <file> [--depth N] [--json]",
+    summary: "Walk the import graph from a file (relative, tsconfig aliases). Never enters node_modules.",
+    options: ["--depth N    how far to follow imports (default 2)"],
+    examples: ["clue graph src/run.ts", "clue graph src/run.ts --depth 3 --json"],
+    flags: ["depth"],
+    args: 1,
+  },
+  trace: {
+    usage: "clue trace <entry> [--depth N] [--json]",
+    summary: "Layered map of a subsystem: entry in full, depth 1 as outlines, depth 2 as export lists, beyond as paths.",
+    options: ["--depth N    how far to follow imports (default 2)"],
+    examples: ["clue trace src/run.ts", "clue trace src/run.ts --depth 1 | pbcopy"],
+    flags: ["depth"],
+    args: 1,
+  },
+  survey: {
+    usage: "clue survey [dir] [--json]",
+    summary: "Token profile of a repo: top 20 files, total tokens, suggested ignore list. Respects .gitignore.",
+    options: [],
+    examples: ["clue survey", "clue survey packages/api --json"],
+    flags: [],
+    args: 1,
+  },
+  version: {
+    usage: "clue version [--json]",
+    summary: "Print the version and contract number.",
+    options: [],
+    examples: ["clue version --json"],
+    flags: [],
+    args: 0,
+  },
+};
+
+export function commandHelp(name: string): string {
+  const doc = COMMAND_DOCS[name]!;
+  const lines = [`${doc.usage}`, "", doc.summary, ""];
+  lines.push("Options");
+  for (const option of doc.options) lines.push(`  ${option}`);
+  lines.push("  --json       emit the JSON envelope", "  --help, -h   show this help", "");
+  lines.push("Examples");
+  for (const example of doc.examples) lines.push(`  ${example}`);
+  lines.push("", "Results go to stdout; warnings and the token summary go to stderr.", "");
+  return lines.join("\n");
+}
+
+/** Peringatan (bukan error) untuk flag tak dikenal dan argumen berlebih — tidak menggagalkan perintah. */
+function inputWarnings(command: string, parsed: ParsedArgv): string[] {
+  const doc = COMMAND_DOCS[command];
+  if (doc === undefined) return [];
+  const known = new Set(["json", "help", "version", ...doc.flags]);
+  const warnings: string[] = [];
+  for (const name of Object.keys(parsed.flags)) {
+    if (!known.has(name)) warnings.push(`Warning: unknown option --${name} for "clue ${command}" (ignored). See: clue ${command} --help`);
+  }
+  const extra = parsed.positionals.slice(doc.args);
+  if (extra.length > 0) {
+    warnings.push(`Warning: ignoring extra argument${extra.length > 1 ? "s" : ""}: ${extra.join(" ")}`);
+  }
+  return warnings;
+}
 
 interface CommandResult {
   data: unknown;
@@ -200,7 +284,7 @@ export function run(argv: string[], io: Io = processIo): number {
   const asJson = parsed.flags.json === true;
 
   if (parsed.flags.help === true) {
-    io.stdout(HELP);
+    io.stdout(parsed.command !== null && parsed.command in COMMAND_DOCS ? commandHelp(parsed.command) : HELP);
     return 0;
   }
 
@@ -217,7 +301,12 @@ export function run(argv: string[], io: Io = processIo): number {
 
   const handler = COMMANDS[command];
   if (handler === undefined) {
-    const message = `Unknown command: ${command}. Available: ${Object.keys(COMMANDS).join(", ")}`;
+    const names = Object.keys(COMMANDS);
+    const guess = closestMatch(command, names);
+    const message =
+      `Unknown command: ${command}.` +
+      (guess === undefined ? "" : ` Did you mean "${guess}"?`) +
+      ` Available: ${names.join(", ")}`;
     if (asJson) {
       emit(io, fail(command, "UNKNOWN_COMMAND", message), "", true);
     } else {
@@ -225,6 +314,8 @@ export function run(argv: string[], io: Io = processIo): number {
     }
     return 1;
   }
+
+  for (const warning of inputWarnings(command, parsed)) io.stderr(`${warning}\n`);
 
   try {
     const result = handler(parsed, io);
