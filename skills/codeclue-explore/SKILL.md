@@ -24,19 +24,19 @@ tokens. Your job is to reason over that map, not to rebuild it by opening files.
 ## When to use
 
 The user asks how something works, wants a flow traced, or is new to a TS/JS repo.
-Skip it when you are told the exact file and a small edit to make.
+Skip it when you are told the exact file and a small edit to make, or when the repo
+is tiny (a few dozen files): just read the two or three files that matter.
 
 ## Procedure
 
-1. **Pick one entry file** from the question. Find it by name only:
-   `git ls-files | grep -i <keyword>` or a glob. Prefer the file that wires the feature
-   together (route, handler, service, `index.ts`, `main.ts`) over a leaf utility.
-   If the repo is large and you have no idea where to start, run
-   `npx github:rhrdianbaihaqi/codeclue survey` first to see the heaviest files and the directory shape.
-2. **Run the trace with `--depth 1` first**, from the repo root, as a plain command
+1. **Pick one entry file and trace it right away.** Prefer the file that wires the
+   feature together (route, handler, service, `index.ts`, `main.ts`, `*-base.ts`) over
+   a leaf utility. If the path is not obvious, make ONE filename lookup
+   (`git ls-files | grep -i <keyword>`), then trace. Do not explore further first.
+2. **Run the trace with `--depth 1`**, from the repo root, as a plain command
    (no shell variables or wrappers around it):
    `npx github:rhrdianbaihaqi/codeclue trace <entry> --depth 1`
-   If the entry file is huge (the map's first section is thousands of tokens), add `--outline-entry` to see it as a skeleton.
+   If the entry file is huge (its section is thousands of tokens), add `--outline-entry`.
    Go to `--depth 2` only if the depth-1 map was small (the last line says
    `~X tokens`; under about 3000 is fine). A header like `[exports · outline saves 0% ...]` means a type-heavy
    file was reduced to its export names; run `clue outline <path>` only if you need it. If the tool says the output is
@@ -49,8 +49,9 @@ Skip it when you are told the exact file and a small edit to make.
    - `[path]`: just a path; depth limit, a test, or generated code.
    - `### cycles`: files that import each other.
    The last stderr line reports `N files: ~X tokens vs ~Y if read in full (Z% saved)`.
-4. **Answer from the map where you can.** Name the files, the functions, and how they
-   connect, using only what the map shows.
+4. **Answer from the map where you can, in your next message.** Name the files, the
+   functions, and how they connect, using only what the map shows. Do not open files
+   just to confirm what the map already says.
 5. **Go deeper only where needed.** For one specific file, in this order:
    1. `npx github:rhrdianbaihaqi/codeclue outline <file>` (cheap skeleton; one or two files at a time,
       not a loop over the whole directory),

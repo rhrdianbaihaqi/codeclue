@@ -144,6 +144,14 @@ The repo ships a skill that makes the agent run `clue trace` before it opens any
 /plugin install codeclue@codeclue
 ```
 
+**What to expect, honestly.** The skill makes an agent look at a compact map before it
+opens files, and keeps it to a few full reads. It does **not** make a session cheaper
+today. In a 24-run A/B on hono, h3 and zod, answers were equally good, but sessions
+with the skill cost about 20% more (more turns, more cached context) than a plain
+agent that batches `cat`/`sed`. Use it when you want a reviewable map of a subsystem
+or a hard cap on file reads, not as an automatic cost saver. The tables above measure
+output size, not agent spend.
+
 ## Built for agents, not just humans
 
 Every command speaks JSON:
