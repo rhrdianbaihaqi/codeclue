@@ -13,3 +13,8 @@ export function savedPercent(original: number, reduced: number): number {
   if (original <= 0) return 0;
   return Math.round(((original - reduced) / original) * 100);
 }
+
+/** "66% saved", atau "no savings" bila hasilnya tidak lebih kecil (jangan tampilkan persen negatif). */
+export function formatSaved(percent: number): string {
+  return percent > 0 ? `${percent}% saved` : "no savings";
+}

@@ -101,6 +101,27 @@ That last row is not a bug — `types.ts` is pure type declarations. There are n
 bodies to remove, so nothing is removed. **When in doubt, codeclue keeps it.**
 Losing something you needed is far worse than leaving a little noise.
 
+### `trace` on five real repos
+
+Size of the `trace` output vs. reading every file in the map in full
+(estimated tokens, chars/4). This measures the map, not an agent session.
+
+| Repo | Entry | Depth | Files | Full | `trace` | Saved |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| hono | `src/hono.ts` | 1 | 18 | ~42,703 | ~2,005 | **95%** |
+| hono | `src/hono.ts` | 2 | 26 | ~51,953 | ~6,298 | **88%** |
+| h3 | `src/h3.ts` | 1 | 24 | ~37,650 | ~10,333 | **73%** |
+| h3 | `src/h3.ts` | 2 | 29 | ~48,192 | ~11,186 | **77%** |
+| ky | `source/index.ts` | 1 | 31 | ~48,642 | ~11,325 | **77%** |
+| ky | `source/index.ts` | 2 | 31 | ~48,642 | ~11,923 | **75%** |
+| commander.js | `index.js` | 1 | 7 | ~31,594 | ~5,085 | **84%** |
+| commander.js | `index.js` | 2 | 7 | ~31,594 | ~5,091 | **84%** |
+| zod | `packages/zod/src/v4/classic/schemas.ts` | 1 | 24 | ~174,066 | ~40,910 | **76%** |
+| zod | `packages/zod/src/v4/classic/schemas.ts` | 2 | 24 | ~174,066 | ~74,899 | 57% |
+
+The weak row is honest: zod's entry is a 25k-token file shown in full, and its
+core files are type-heavy, so depth 2 saves less. Start with `--depth 1` there.
+
 ## Install
 
 ```bash

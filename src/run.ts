@@ -4,6 +4,7 @@ import { formatSurvey, survey } from "./commands/survey";
 import { DEFAULT_TRACE_DEPTH, formatTrace, trace } from "./commands/trace";
 import { fail, ok } from "./envelope";
 import type { Envelope } from "./envelope";
+import { formatSaved } from "./lib/count";
 import { CliError } from "./lib/errors";
 import { closestMatch } from "./lib/suggest";
 import { VERSION } from "./version";
@@ -245,7 +246,7 @@ const COMMANDS: Record<string, Handler> = {
     return {
       data: result,
       human: formatTrace(result),
-      note: `${t.files} files: ~${t.traceTokens} tokens vs ~${t.fullTokens} if read in full (${t.savedPercent}% saved)`,
+      note: `${t.files} files: ~${t.traceTokens} tokens vs ~${t.fullTokens} if read in full (${formatSaved(t.savedPercent)})`,
     };
   },
 
@@ -270,7 +271,7 @@ const COMMANDS: Record<string, Handler> = {
       human: result.outline,
       note:
         `~${result.originalTokens} tokens -> ~${result.outlineTokens} tokens ` +
-        `(${result.savedPercent}% saved)`,
+        `(${formatSaved(result.savedPercent)})`,
     };
   },
 };
