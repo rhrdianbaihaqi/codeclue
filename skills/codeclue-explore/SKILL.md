@@ -36,10 +36,11 @@ Skip it when you are told the exact file and a small edit to make.
 2. **Run the trace with `--depth 1` first**, from the repo root, as a plain command
    (no shell variables or wrappers around it):
    `npx codeclue@alpha trace <entry> --depth 1`
-   Depth 2 on a well-connected entry can print 100KB+ and cost more than it saves.
    Go to `--depth 2` only if the depth-1 map was small (the last line says
-   `~X tokens`; under about 3000 is fine). If any output is huge, never read all of it:
-   rerun at a lower depth or pick a narrower entry.
+   `~X tokens`; under about 3000 is fine). A map can still be huge when a neighbour is
+   mostly type declarations (its outline barely shrinks). If the tool says the output is
+   too large, never read all of it: rerun with a narrower entry or `--depth 0`-adjacent
+   files, and outline only the files you need.
 3. **Read the map, top to bottom.** Layers are:
    - `[entry · full]`: the entry's whole source.
    - `[outline]`: signatures and types, bodies removed (`/* ... */`).
