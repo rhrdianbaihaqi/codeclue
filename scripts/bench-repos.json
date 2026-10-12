@@ -1,0 +1,19 @@
+{
+  "note": "ref = branch, tag, or commit SHA. null means the default branch HEAD; the resolved commit is always printed so a run can be pinned afterwards.",
+  "trace": [
+    { "name": "hono", "url": "https://github.com/honojs/hono", "ref": null, "entry": "src/hono.ts" },
+    { "name": "h3", "url": "https://github.com/unjs/h3", "ref": null, "entry": "src/h3.ts" },
+    { "name": "ky", "url": "https://github.com/sindresorhus/ky", "ref": null, "entry": "source/index.ts" },
+    { "name": "commander.js", "url": "https://github.com/tj/commander.js", "ref": null, "entry": "index.js" },
+    {
+      "name": "zod",
+      "url": "https://github.com/colinhacks/zod",
+      "ref": null,
+      "entry": "packages/zod/src/v4/classic/schemas.ts"
+    }
+  ],
+  "receipts": [
+    { "name": "hono", "url": "https://github.com/honojs/hono", "ref": null, "dir": "src" },
+    { "name": "h3", "url": "https://github.com/unjs/h3", "ref": null, "dir": "src" }
+  ]
+}

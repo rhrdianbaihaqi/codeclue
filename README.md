@@ -123,6 +123,18 @@ The weak row is honest: zod's entry is a 25k-token file shown in full, and its
 core files are type-heavy, so depth 2 saves less. Start with `--depth 1` there;
 `--outline-entry` shows the entry as a skeleton too (zod: 76% → 81% at depth 1, 57% → 62% at depth 2).
 
+Reproduce the two tables above (clones the repos shallowly into a temp directory,
+prints the commit it measured, never touches your files):
+
+```bash
+npm run build && npm run bench -- trace      # the five-repo table; add --outline-entry for that variant
+npm run bench -- receipts                    # outline across hono + h3 src/
+```
+
+The numbers above were measured before this script existed, at commits I did not
+record, so a rerun against today's `HEAD` will differ somewhat. Pin `ref` in
+`scripts/bench-repos.json` to freeze a run.
+
 ## Install
 
 ```bash
