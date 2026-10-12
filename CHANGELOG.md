@@ -5,6 +5,8 @@ number only changes on breaking changes to the shape of `data`.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-10-12
+
 ### Added
 - `scripts/bench.mjs` (`npm run bench`): reproduces the README's `trace` and `outline` savings tables from shallow clones and prints the commits measured. Dev tool, not shipped.
 - `clue trace --outline-entry`: show the entry file as an outline instead of in full, for big entry files.

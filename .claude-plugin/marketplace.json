@@ -9,7 +9,7 @@
     {
       "name": "codeclue",
       "description": "Explore an unfamiliar TypeScript/JavaScript codebase with minimal tokens by running `clue trace` before opening any file.",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "author": { "name": "rhrdianbaihaqi" },
       "source": "./",
       "homepage": "https://github.com/rhrdianbaihaqi/codeclue",

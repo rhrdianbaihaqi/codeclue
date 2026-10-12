@@ -178,7 +178,7 @@ clue outline src/index.ts --json
 {
   "ok": true,
   "command": "outline",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "contract": 1,
   "data": {
     "file": "src/index.ts",
