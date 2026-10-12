@@ -75,30 +75,32 @@ bodies are blanked **in memory**, and the original text is printed back.
 
 ## The receipts
 
-Run across every non-test `.ts`/`.tsx` file in [hono](https://github.com/honojs/hono)
-and [h3](https://github.com/unjs/h3):
+Run across every non-test `.ts`/`.tsx` file under `src/` in
+[hono](https://github.com/honojs/hono) and [h3](https://github.com/unjs/h3)
+(pinned commits `hono@552ea02`, `h3@66cfb8a`):
 
 | | |
 | --- | --- |
-| Files processed | **274** |
+| Files processed | **277** |
 | Failures | **0** |
-| Tokens | **316,933 → 138,779** |
-| Saved overall | **56%** |
-| Median file | **58%** |
+| Tokens | **332,426 → 140,749** |
+| Saved overall | **58%** |
+| Median file | **59%** |
 
-A sample, largest first:
+The six largest files, largest first:
 
 | File | Before | After | Saved |
 | --- | ---: | ---: | ---: |
-| `h3/src/utils/proxy.ts` | 6,826 | 825 | **88%** |
-| `h3/src/utils/request.ts` | 5,628 | 1,378 | **76%** |
-| `hono/src/jsx/dom/render.ts` | 6,637 | 1,894 | **71%** |
-| `hono/src/hono-base.ts` | 4,079 | 1,312 | **68%** |
-| `hono/src/context.ts` | 5,673 | 3,044 | 46% |
-| `hono/src/types.ts` | 22,457 | 22,422 | 0% |
+| `hono/src/types.ts` | 22,478 | 22,443 | 0% |
+| `hono/src/jsx/intrinsic-elements.ts` | 7,637 | 7,610 | 0% |
+| `hono/src/jsx/dom/render.ts` | 7,150 | 1,832 | **74%** |
+| `h3/src/rules/match.ts` | 6,844 | 1,713 | **75%** |
+| `h3/src/utils/proxy.ts` | 6,826 | 746 | **89%** |
+| `h3/src/utils/request.ts` | 5,687 | 1,292 | **77%** |
 
-That last row is not a bug — `types.ts` is pure type declarations. There are no
-bodies to remove, so nothing is removed. **When in doubt, codeclue keeps it.**
+The two 0% rows are not bugs — `types.ts` and `intrinsic-elements.ts` are type
+declarations only (no functions, classes or constants at the top level). There
+are no bodies to remove, so nothing is removed. **When in doubt, codeclue keeps it.**
 Losing something you needed is far worse than leaving a little noise.
 
 ### `trace` on five real repos
@@ -131,9 +133,9 @@ npm run build && npm run bench -- trace      # the five-repo table; add --outlin
 npm run bench -- receipts                    # outline across hono + h3 src/
 ```
 
-The numbers above were measured before this script existed, at commits I did not
-record, so a rerun against today's `HEAD` will differ somewhat. Pin `ref` in
-`scripts/bench-repos.json` to freeze a run.
+Every repo in `scripts/bench-repos.json` is pinned to the commit measured above, so a
+rerun reproduces these tables exactly (checked: all ten `trace` rows, and the
+`--outline-entry` variant for zod). Set `ref` to `null` to measure the current `HEAD` instead.
 
 ## Install
 

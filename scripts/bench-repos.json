@@ -1,19 +1,49 @@
 {
-  "note": "ref = branch, tag, or commit SHA. null means the default branch HEAD; the resolved commit is always printed so a run can be pinned afterwards.",
+  "note": "ref = branch, tag, or commit SHA (null = default branch HEAD; the resolved commit is always printed). Pinned to the commits the README tables were verified against.",
   "trace": [
-    { "name": "hono", "url": "https://github.com/honojs/hono", "ref": null, "entry": "src/hono.ts" },
-    { "name": "h3", "url": "https://github.com/unjs/h3", "ref": null, "entry": "src/h3.ts" },
-    { "name": "ky", "url": "https://github.com/sindresorhus/ky", "ref": null, "entry": "source/index.ts" },
-    { "name": "commander.js", "url": "https://github.com/tj/commander.js", "ref": null, "entry": "index.js" },
+    {
+      "name": "hono",
+      "url": "https://github.com/honojs/hono",
+      "ref": "552ea024250093a48071b3ded9710de4c6e05f14",
+      "entry": "src/hono.ts"
+    },
+    {
+      "name": "h3",
+      "url": "https://github.com/unjs/h3",
+      "ref": "66cfb8a357b6285451bad498c2c40002601fae98",
+      "entry": "src/h3.ts"
+    },
+    {
+      "name": "ky",
+      "url": "https://github.com/sindresorhus/ky",
+      "ref": "3541888878c4d303a8bc2ad61815f4e048f55a5d",
+      "entry": "source/index.ts"
+    },
+    {
+      "name": "commander.js",
+      "url": "https://github.com/tj/commander.js",
+      "ref": "ba6d13ddb4243e5913367734f8c159089ffe7834",
+      "entry": "index.js"
+    },
     {
       "name": "zod",
       "url": "https://github.com/colinhacks/zod",
-      "ref": null,
+      "ref": "284243fb0d6532665afdc9239188773bb624f73c",
       "entry": "packages/zod/src/v4/classic/schemas.ts"
     }
   ],
   "receipts": [
-    { "name": "hono", "url": "https://github.com/honojs/hono", "ref": null, "dir": "src" },
-    { "name": "h3", "url": "https://github.com/unjs/h3", "ref": null, "dir": "src" }
+    {
+      "name": "hono",
+      "url": "https://github.com/honojs/hono",
+      "ref": "552ea024250093a48071b3ded9710de4c6e05f14",
+      "dir": "src"
+    },
+    {
+      "name": "h3",
+      "url": "https://github.com/unjs/h3",
+      "ref": "66cfb8a357b6285451bad498c2c40002601fae98",
+      "dir": "src"
+    }
   ]
 }
